@@ -79,11 +79,11 @@ sequencer:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # IMPORTANT: For production, use external secret management systems instead, see README.md for more details
   secrets:
-    # data:
-    #   key: |
-    #     0x0000000
-      # IMPORTANT: For production, use external secret management systems instead, see README.md for more details
+    data:
+      # key: |
+      #   0x0000000
   # Files configuration
   # Override default config files or add additional files
   files:
@@ -156,9 +156,9 @@ maru:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # IMPORTANT: For production, use external secret management systems instead, see README.md for more details
   secrets:
-    # IMPORTANT: For production, use external secret management systems instead, see README.md for more details
-    # data:
+    data:
     #   key: |
     #     0x0000000
   files:

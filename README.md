@@ -43,6 +43,12 @@ helm install linea chart \
     --set global.namespace=linea
 ```
 
+Additionally, the chart is available publicly [here](https://github.com/samclusker/linea-helm-chart/pkgs/container/linea-dev)
+
+```bash
+helm install linea-dev oci://ghcr.io/samclusker/linea-dev
+```
+
 ### Custom Values
 
 Create a `custom-values.yaml` file to override default settings:
