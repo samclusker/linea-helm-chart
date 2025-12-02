@@ -1,0 +1,44 @@
+{{- $component := "maru" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-defaults
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+data:
+  config.toml: |
+{{- tpl (.Files.Get "files/maru/config.toml.tpl") . | nindent 4 }}
+  log4j.xml: |
+{{- .Files.Get "files/maru/log4j.xml" | nindent 4 }}
+  genesis.json: |
+{{- .Files.Get "files/maru/genesis.json" | nindent 4 }}
+{{- if .Values.maru.files.overrides }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-overrides
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.maru.files.overrides }}
+  {{ $key }}: {{ toYaml $value | indent 2 }}
+  {{- end }}
+{{- end }}
+{{- if .Values.maru.files.additionalFiles }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-additional-files
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.maru.files.additionalFiles }}
+  {{ $key }}: {{ toYaml $value | indent 2 }}
+  {{- end }}
+{{- end }}
+

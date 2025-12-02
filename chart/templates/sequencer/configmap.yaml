@@ -1,0 +1,47 @@
+{{- $component := "sequencer" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-defaults
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+data:
+  config.toml: |
+{{- .Files.Get "files/sequencer/config.toml" | nindent 4 }}
+  log4j.xml: |
+{{- .Files.Get "files/sequencer/log4j.xml" | nindent 4 }}
+  genesis.json: |
+{{- .Files.Get "files/common/genesis.json" | nindent 4 }}
+  tracelimits.toml: |
+{{- .Files.Get "files/common/tracelimits.toml" | nindent 4 }}
+  denylist.txt: |
+{{- .Files.Get "files/common/denylist.txt" | nindent 4 }}
+{{- if .Values.sequencer.files.overrides }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-overrides
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.sequencer.files.overrides }}
+  {{ $key }}: {{ toYaml $value | indent 2 }}
+  {{- end }}
+{{- end }}
+{{- if .Values.sequencer.files.additionalFiles }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-additional-files
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.sequencer.files.additionalFiles }}
+  {{ $key }}: {{ toYaml $value | indent 2 }}
+  {{- end }}
+{{- end }}

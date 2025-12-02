@@ -1,0 +1,8 @@
+{{- if or .Values.backup.enabled (not (empty .Values.besu.storage.snapshotHandle)) (not (empty .Values.maru.storage.snapshotHandle)) (not (empty .Values.sequencer.storage.snapshotHandle)) }}
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: {{ include "linea-dev.name" . }}-snapshot-class
+driver: ebs.csi.aws.com
+deletionPolicy: Delete
+{{- end }}

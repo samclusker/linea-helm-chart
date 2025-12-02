@@ -1,0 +1,23 @@
+apiVersion: v2
+name: linea-dev
+description: Linea stack chart with sequencer, maru, besu and visualizer services
+
+type: application
+
+version: 0.1.1
+
+appVersion: "1.16.0"
+
+dependencies:
+  - name: gemini
+    version: "^2.1.0"
+    repository: "https://charts.fairwinds.com/stable"
+    condition: backup.enabled
+    tags:
+      - backup
+  - name: kube-prometheus-stack
+    version: "^55.0.0"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: serviceMonitor.enabled
+    tags:
+      - monitoring

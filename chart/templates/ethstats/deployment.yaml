@@ -1,0 +1,65 @@
+{{- $component := "ethstats" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.ethstats.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 6 }}
+  template:
+    metadata:
+      {{- with include "linea-dev.component.annotations" (dict "component" $component "root" .) }}
+      annotations:
+        {{- . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "linea-dev.component.labels.with.custom" (dict "component" $component "customLabels" .Values.ethstats.podLabels "root" .) | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ethstats.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: ethstats
+          image: "{{ .Values.ethstats.image.repository }}:{{ .Values.ethstats.image.tag }}{{ if .Values.ethstats.image.digest }}@{{ .Values.ethstats.image.digest }}{{ end }}"
+          imagePullPolicy: {{ .Values.ethstats.image.pullPolicy }}
+          {{- with .Values.ethstats.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ethstats.service.ports.http }}
+              protocol: TCP
+          env:
+            {{- if .Values.ethstats.secrets.data }}
+            - name: WS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
+                  key: WS_SECRET
+            {{- end }}
+            {{- with .Values.ethstats.additionalEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.ethstats.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.ethstats.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.ethstats.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

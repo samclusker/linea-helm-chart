@@ -1,0 +1,33 @@
+{{- $component := "besu" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+    {{- with .Values.besu.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with include "linea-dev.service.annotations" (dict "component" $component "root" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.besu.service.type }}
+  ports:
+    - port: {{ .Values.besu.service.ports.rpc }}
+      targetPort: json-rpc
+      protocol: TCP
+      name: json-rpc
+    - port: {{ .Values.besu.service.ports.engine }}
+      targetPort: engine
+      protocol: TCP
+      name: engine
+    - port: {{ .Values.besu.service.ports.metrics }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 4 }}
+

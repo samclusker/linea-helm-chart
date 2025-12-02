@@ -1,0 +1,184 @@
+{{- $component := "besu" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.besu.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 6 }}
+  template:
+    metadata:
+      {{- with include "linea-dev.component.annotations" (dict "component" $component "root" .) }}
+      annotations:
+        {{- . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "linea-dev.component.labels.with.custom" (dict "component" $component "customLabels" .Values.besu.podLabels "root" .) | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.besu.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-sequencer
+          image: curlimages/curl:latest
+          command: ['sh', '-c']
+          args:
+            - |
+              echo "Waiting for sequencer to be ready..."
+              until curl -s -f http://{{ include "linea-dev.component.name" (dict "component" "sequencer" "root" .) }}:{{ .Values.sequencer.service.ports.metrics }}/metrics; do
+                echo "Sequencer not ready yet, waiting..."
+                sleep 2
+              done
+              echo "Sequencer is ready!"
+      containers:
+        - name: besu
+          image: "{{ .Values.besu.image.repository }}:{{ .Values.besu.image.tag }}{{ if .Values.besu.image.digest }}@{{ .Values.besu.image.digest }}{{ end }}"
+          imagePullPolicy: {{ .Values.besu.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              SEQUENCER_IP=$(getent hosts {{ include "linea-dev.component.name" (dict "component" "sequencer" "root" .) }}-0.{{ include "linea-dev.component.name" (dict "component" "sequencer" "root" .) }}.{{ .Release.Namespace }}.svc.cluster.local | awk '{print $1}')
+              exec besu-untuned \
+                --ethstats=ws://besu-node:{{ .Values.ethstats.secrets.data.WS_SECRET }}@{{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}:{{ .Values.ethstats.service.ports.http }} \
+                --bootnodes=enode://14408801a444dafc44afbccce2eb755f902aed3b5743fed787b3c790e021fef28b8c827ed896aa4e8fb46e22bd67c39f994a73768b4b382f8597b0d44370e15d@${SEQUENCER_IP}:30303 \
+                {{- range $index, $arg := .Values.besu.args }}
+                {{ $arg }}{{ if ne $index (sub (len $.Values.besu.args) 1) }} \{{ end }}
+                {{- end }}
+          {{- with .Values.besu.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: LOG4J_CONFIGURATION_FILE
+              value: /var/lib/besu/log4j.xml
+            {{- with .Values.besu.additionalEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: json-rpc
+              containerPort: {{ .Values.besu.service.ports.rpc }}
+              protocol: TCP
+            - name: engine
+              containerPort: {{ .Values.besu.service.ports.engine }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.besu.service.ports.metrics }}
+              protocol: TCP
+          {{- with .Values.besu.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.besu.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.besu.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /opt/besu/data
+            {{- if hasKey .Values.besu.files.overrides "config.toml" }}
+            - name: overrides
+              mountPath: /var/lib/besu/config.toml
+              subPath: config.toml
+              readOnly: true
+            {{- else }}
+            - name: defaults
+              mountPath: /var/lib/besu/config.toml
+              subPath: config.toml
+              readOnly: true
+            {{- end }}
+            {{- if hasKey .Values.besu.files.overrides "log4j.xml" }}
+            - name: overrides
+              mountPath: /var/lib/besu/log4j.xml
+              subPath: log4j.xml
+              readOnly: true
+            {{- else }}
+            - name: defaults
+              mountPath: /var/lib/besu/log4j.xml
+              subPath: log4j.xml
+              readOnly: true
+            {{- end }}
+            {{- if hasKey .Values.besu.files.overrides "denylist.txt" }}
+            - name: overrides
+              mountPath: /var/lib/besu/deny-list.txt
+              subPath: denylist.txt
+              readOnly: true
+            {{- else }}
+            - name: defaults
+              mountPath: /var/lib/besu/deny-list.txt
+              subPath: denylist.txt
+              readOnly: true
+            {{- end }}
+            {{- if hasKey .Values.besu.files.overrides "genesis.json" }}
+            - name: overrides
+              mountPath: /var/lib/besu/genesis.json
+              subPath: genesis.json
+              readOnly: true
+            {{- else }}
+            - name: defaults
+              mountPath: /var/lib/besu/genesis.json
+              subPath: genesis.json
+              readOnly: true
+            {{- end }}
+            {{- if hasKey .Values.besu.files.overrides "tracelimits.toml" }}
+            - name: overrides
+              mountPath: /var/lib/besu/traces-limits.toml
+              subPath: tracelimits.toml
+              readOnly: true
+            {{- else }}
+            - name: defaults
+              mountPath: /var/lib/besu/traces-limits.toml
+              subPath: tracelimits.toml
+              readOnly: true
+            {{- end }}
+            {{- if .Values.besu.files.additionalFiles }}
+            {{- range $key, $value := .Values.besu.files.additionalFiles }}
+            - name: additional-files
+              mountPath: "{{ .Values.besu.files.additionalFiles.mountPath }}/{{ $key }}"
+              subPath: {{ $key }}
+            {{- end }}
+            {{- end }}
+      volumes:
+        - name: defaults
+          configMap:
+            name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-defaults
+        {{- if .Values.besu.files.overrides }}
+        - name: overrides
+          configMap:
+            name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-overrides
+        {{- end }}
+        {{- if .Values.besu.files.additionalFiles }}
+        - name: additional-files
+          configMap:
+            name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-additional-files
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.besu.storage.storageClassName }}
+        {{- if not (empty .Values.besu.storage.snapshotHandle) }}
+        dataSource:
+          kind: VolumeSnapshot
+          name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+          apiGroup: snapshot.storage.k8s.io
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.besu.storage.size }}

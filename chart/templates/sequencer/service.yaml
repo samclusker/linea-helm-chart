@@ -1,0 +1,68 @@
+{{- $component := "sequencer" }}
+# Headless service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+    {{- with .Values.sequencer.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with include "linea-dev.service.annotations" (dict "component" $component "root" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  clusterIP: None
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.sequencer.service.ports.metrics }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    - port: {{ .Values.sequencer.service.ports.engine }}
+      targetPort: engine
+      protocol: TCP
+      name: engine
+    - port: {{ .Values.sequencer.service.ports.rpc }}
+      targetPort: rpc
+      protocol: TCP
+      name: rpc
+  selector:
+    {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 4 }}
+---
+# Regular service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-metrics
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+    app.kubernetes.io/component: metrics-service
+    {{- with .Values.sequencer.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with include "linea-dev.service.annotations" (dict "component" $component "root" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.sequencer.service.type }}
+  ports:
+    - port: {{ .Values.sequencer.service.ports.metrics }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    - port: {{ .Values.sequencer.service.ports.engine }}
+      targetPort: engine
+      protocol: TCP
+      name: engine
+    - port: {{ .Values.sequencer.service.ports.rpc }}
+      targetPort: rpc
+      protocol: TCP
+      name: rpc
+  selector:
+    {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 4 }}

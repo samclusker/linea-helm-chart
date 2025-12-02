@@ -1,0 +1,25 @@
+{{- $component := "ethstats" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+    {{- with .Values.ethstats.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with include "linea-dev.service.annotations" (dict "component" $component "root" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.ethstats.service.type }}
+  ports:
+    - port: {{ .Values.ethstats.service.ports.http }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 4 }}
+

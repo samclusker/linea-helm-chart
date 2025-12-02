@@ -1,0 +1,159 @@
+{{- $component := "maru" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.maru.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 6 }}
+  template:
+    metadata:
+      {{- with include "linea-dev.component.annotations" (dict "component" $component "root" .) }}
+      annotations:
+        {{- . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "linea-dev.component.labels.with.custom" (dict "component" $component "customLabels" .Values.maru.podLabels "root" .) | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.maru.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-sequencer
+          image: curlimages/curl:latest
+          command: ['sh', '-c']
+          args:
+            - |
+              echo "Waiting for sequencer to be ready..."
+              until curl -s -f http://{{ include "linea-dev.component.name" (dict "component" "sequencer" "root" .) }}:{{ .Values.sequencer.service.ports.metrics }}/metrics; do
+                echo "Sequencer not ready yet, waiting..."
+                sleep 2
+              done
+              echo "Sequencer is ready!"
+      containers:
+        - name: maru
+          image: "{{ .Values.maru.image.repository }}:{{ .Values.maru.image.tag }}{{ if .Values.maru.image.digest }}@{{ .Values.maru.image.digest }}{{ end }}"
+          imagePullPolicy: {{ .Values.maru.image.pullPolicy }}
+          command:
+            {{- range .Values.maru.command }}
+            - {{ . }}
+            {{- end }}
+          {{- with .Values.maru.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- toYaml .Values.maru.additionalEnv | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.maru.service.ports.http }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.maru.service.ports.metrics }}
+              protocol: TCP
+          {{- with .Values.maru.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.maru.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.maru.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /opt/consensys/maru/data
+            {{- if hasKey .Values.maru.files.overrides "config.toml" }}
+            - name: overrides
+              mountPath: /opt/consensys/maru/configs/config.toml
+              subPath: config.toml
+              readOnly: true
+            {{- else }}
+            - name: defaults
+              mountPath: /opt/consensys/maru/configs/config.toml
+              subPath: config.toml
+              readOnly: true
+            {{- end }}
+            {{- if hasKey .Values.maru.files.overrides "log4j.xml" }}
+            - name: overrides
+              mountPath: /opt/consensys/maru/configs/log4j.xml
+              subPath: log4j.xml
+              readOnly: true
+            {{- else }}
+            - name: defaults
+              mountPath: /opt/consensys/maru/configs/log4j.xml
+              subPath: log4j.xml
+              readOnly: true
+            {{- end }}
+            {{- if hasKey .Values.maru.files.overrides "genesis.json" }}
+            - name: overrides
+              mountPath: /opt/consensys/maru/configs/genesis.json
+              subPath: genesis.json
+              readOnly: true
+            {{- else }}
+            - name: defaults
+              mountPath: /opt/consensys/maru/configs/genesis.json
+              subPath: genesis.json
+              readOnly: true
+            {{- end }}
+            {{- if .Values.maru.secrets.data }}
+            - name: key
+              mountPath: /opt/consensys/maru/key
+              subPath: key
+              readOnly: true
+            {{- end }}
+            {{- if .Values.maru.files.additionalFiles }}
+            {{- range $key, $value := .Values.maru.files.additionalFiles }}
+            - name: additional-files
+              mountPath: "{{ .Values.maru.files.additionalFiles.mountPath }}/{{ $key }}"
+              subPath: {{ $key }}
+            {{- end }}
+            {{- end }}
+      volumes:
+        - name: defaults
+          configMap:
+            name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-defaults
+        {{- if .Values.maru.files.overrides }}
+        - name: overrides
+          configMap:
+            name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-overrides
+        {{- end }}
+        {{- if .Values.maru.secrets.data }}
+        - name: key
+          secret:
+            secretName: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
+        {{- end }}
+        {{- if .Values.maru.files.additionalFiles }}
+        - name: additional-files
+          configMap:
+            name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-additional-files
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.maru.storage.storageClassName }}
+        {{- if not (empty .Values.maru.storage.snapshotHandle) }}
+        dataSource:
+          kind: VolumeSnapshot
+          name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+          apiGroup: snapshot.storage.k8s.io
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.maru.storage.size }}

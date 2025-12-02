@@ -1,0 +1,47 @@
+{{- $component := "besu" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-defaults
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+data:
+  config.toml: |
+{{- .Files.Get "files/besu/config.toml" | nindent 4 }}
+  log4j.xml: |
+{{- .Files.Get "files/besu/log4j.xml" | nindent 4 }}
+  denylist.txt: |
+{{- .Files.Get "files/besu/denylist.txt" | nindent 4 }}
+  genesis.json: |
+{{- .Files.Get "files/common/genesis.json" | nindent 4 }}
+  tracelimits.toml: |
+{{- .Files.Get "files/common/tracelimits.toml" | nindent 4 }}
+{{- if .Values.besu.files.overrides }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-overrides
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.besu.files.overrides }}
+  {{ $key }}: {{ toYaml $value | indent 2 }}
+  {{- end }}
+{{- if .Values.besu.files.additionalFiles }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-additional-files
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.besu.files.additionalFiles }}
+  {{ $key }}: {{ toYaml $value | indent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}

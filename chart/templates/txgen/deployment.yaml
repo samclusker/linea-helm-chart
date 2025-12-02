@@ -1,0 +1,78 @@
+{{- if .Values.txgen.enabled }}
+{{- $component := "txgen" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.txgen.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 6 }}
+  template:
+    metadata:
+      {{- with include "linea-dev.component.annotations" (dict "component" $component "root" .) }}
+      annotations:
+        {{- . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "linea-dev.component.labels.with.custom" (dict "component" $component "customLabels" .Values.txgen.podLabels "root" .) | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.txgen.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-besu
+          image: curlimages/curl:latest
+          command: ['sh', '-c']
+          args:
+            - |
+              echo "Waiting for besu to be ready..."
+              until curl -s -f -X POST \
+                -H "Content-Type: application/json" \
+                -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+                http://{{ include "linea-dev.component.name" (dict "component" "besu" "root" .) }}:{{ .Values.besu.service.ports.rpc }}; do
+                echo "Besu not ready yet, waiting..."
+                sleep 2
+              done
+              echo "Besu is ready!"
+      containers:
+        - name: txgen
+          image: "{{ .Values.txgen.image.repository }}:{{ .Values.txgen.image.tag }}{{ if .Values.txgen.image.digest }}@{{ .Values.txgen.image.digest }}{{ end }}"
+          imagePullPolicy: {{ .Values.txgen.image.pullPolicy }}
+          {{- with .Values.txgen.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args:
+            - --rpc-url=http://{{ include "linea-dev.component.name" (dict "component" "besu" "root" .) }}:{{ .Values.besu.service.ports.rpc }}
+            {{- range .Values.txgen.args }}
+            - {{ . }}
+            {{- end }}
+          env:
+          - name: SENDER_PK
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
+                key: SENDER_PK
+          {{- with .Values.txgen.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.txgen.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.txgen.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

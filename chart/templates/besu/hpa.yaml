@@ -1,0 +1,33 @@
+{{- if .Values.besu.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" "besu" "root" .) }}
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" "besu" "root" .) | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: {{ include "linea-dev.component.name" (dict "component" "besu" "root" .) }}
+  minReplicas: {{ .Values.besu.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.besu.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.besu.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.besu.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.besu.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.besu.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

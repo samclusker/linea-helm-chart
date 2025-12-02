@@ -1,0 +1,453 @@
+# Global settings
+global:
+  namespace: "linea"  # If empty, uses .Release.Namespace
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+  domain: "foo.bar"
+  labels:
+    app.kubernetes.io/part-of: "linea-dev"
+  annotations: {}
+
+serviceAccount:
+  create: true
+  name: ""
+  automount: true
+  annotations:
+    # AWS IRSA: eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME
+
+# Sequencer configuration
+sequencer:
+  image:
+    repository: consensys/linea-besu-package
+    tag: beta-v4.0-rc20-20251104100707-3294a02
+    digest: "" # Optional
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  args:
+    - --config-file=/var/lib/besu/config.toml
+    - --node-private-key-file=/var/lib/besu/key
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9545"
+    prometheus.io/path: "/metrics"
+    backup.gemini.fairwinds.com/enabled: "true"
+  podLabels:
+    app.kubernetes.io/component: "sequencer"
+  podSecurityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    fsGroup: 0
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  storage:
+    size: 100Gi
+    storageClassName: "gp2"
+    accessModes:
+      - ReadWriteOnce
+    snapshotHandle: ""  # Optional: snapshot handle for restore
+  livenessProbe:
+    exec:
+      command:
+        - bash
+        - -c
+        - "[ -f /tmp/pid ]"
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    exec:
+      command:
+        - bash
+        - -c
+        - "[ -f /tmp/pid ]"
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  secrets:
+    # data:
+    #   key: |
+    #     0x0000000
+      # IMPORTANT: For production, use external secret management systems instead, see README.md for more details
+  # Files configuration
+  # Override default config files or add additional files
+  files:
+    overrides: {}
+    additionalFiles: {}
+  additionalEnv: []
+  service:
+    type: ClusterIP
+    ports:
+      metrics: 9545
+      engine: 8550
+      rpc: 8545
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9545"
+      prometheus.io/path: "/metrics"
+    labels:
+      app.kubernetes.io/component: "sequencer"
+
+# Maru configuration
+maru:
+  image:
+    repository: consensys/maru
+    tag: 0f6dc85
+    digest: ""  # Optional
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  command:
+    - java
+    - -Dlog4j2.configurationFile=configs/maru/log4j.xml
+    - -jar
+    - maru.jar
+    - --maru-genesis-file
+    - configs/genesis.json
+    - --config
+    - configs/config.toml
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9545"
+    prometheus.io/path: "/metrics"
+    backup.gemini.fairwinds.com/enabled: "true"
+  podLabels:
+    app.kubernetes.io/component: "maru"
+  podSecurityContext: {}
+  # securityContext:
+  #   allowPrivilegeEscalation: false
+  #   capabilities:
+  #     drop:
+  #     - ALL
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  storage:
+    size: 500Gi
+    storageClassName: "gp2"
+    accessModes:
+      - ReadWriteOnce
+    snapshotHandle: ""
+  livenessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  secrets:
+    # IMPORTANT: For production, use external secret management systems instead, see README.md for more details
+    # data:
+    #   key: |
+    #     0x0000000
+  files:
+    # Override specific default config files
+    # Files available for override: config.toml, log4j.xml, genesis.json
+    overrides: {}
+      # config.toml: |
+      #   # Custom Maru configuration
+      #   [maru]
+      #   port = 8080
+    # Additional files to mount (beyond default config files)
+    additionalFiles: {}
+      # mountPath: /opt/consensys/maru/additional
+      # custom-file.txt: |
+      #   Custom file content here
+  # Additional environment variables
+  additionalEnv: []
+    # - name: CUSTOM_ENV_VAR
+    #   value: "custom-value"
+  # Service configuration
+  service:
+    type: ClusterIP
+    ports:
+      http: 8080
+      metrics: 9545
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9545"
+      prometheus.io/path: "/metrics"
+    labels:
+      app.kubernetes.io/component: "maru"
+
+# Besu RPC node configuration
+besu:
+  image:
+    repository: consensys/linea-besu-package
+    tag: beta-v4.0-rc20-20251104100707-3294a02
+    digest: ""  # Optional
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  args:
+    - --config-file=/var/lib/besu/config.toml
+    - --genesis-file=/var/lib/besu/genesis.json
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9545"
+    prometheus.io/path: "/metrics"
+    backup.gemini.fairwinds.com/enabled: "true"
+  podLabels:
+    app.kubernetes.io/component: "besu"
+  podSecurityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    fsGroup: 0
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+  storage:
+    size: 550Gi
+    storageClassName: "gp2"
+    accessModes:
+      - ReadWriteOnce
+    snapshotHandle: ""  # Optional
+  livenessProbe:
+    exec:
+      command:
+        - bash
+        - -c
+        - "[ -f /tmp/pid ]"
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Files configuration
+  # Override default config files or add additional files
+  files:
+    # Override specific default config files
+    # Files available for override: config.toml, log4j.xml, denylist.txt, genesis.json, tracelimits.toml
+    overrides: {}
+      # config.toml: |
+      #   # Custom Besu configuration
+      #   [Eth]
+      #   NetworkId = 59140
+      #   [RPC]
+      #   httpPort = 8545
+      #   wsPort = 8546
+    # Additional files to mount (beyond default config files)
+    additionalFiles: {}
+      # mountPath: /var/lib/besu/additional
+      # custom-file.txt: |
+      #   Custom file content here
+  # Additional environment variables
+  additionalEnv: []
+    # - name: CUSTOM_ENV_VAR
+    #   value: "custom-value"
+  # Service configuration
+  service:
+    type: LoadBalancer
+    ports:
+      rpc: 8545
+      engine: 8550
+      metrics: 9545
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9545"
+      prometheus.io/path: "/metrics"
+    labels:
+      app.kubernetes.io/component: "besu"
+  # Autoscaling configuration
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 85
+    targetMemoryUtilizationPercentage: 85
+  ingress:
+    enabled: true
+
+# Ethstats configuration
+ethstats:
+  image:
+    repository: consensys/linea-ethstats-server
+    tag: 7422b2a-1730387766
+    digest: ""  # Optional
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  podAnnotations: {}
+  podLabels:
+    app.kubernetes.io/component: "ethstats"
+  podSecurityContext: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  secrets:
+    data:
+      WS_SECRET: "12345"
+  additionalEnv: []
+  service:
+    type: LoadBalancer
+    ports:
+      http: 3000
+    annotations:
+      # AWS: service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    labels:
+      app.kubernetes.io/component: "ethstats"
+  ingress:
+    enabled: true
+
+# ServiceMonitor for Prometheus metrics
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+  labels:
+    app.kubernetes.io/component: "monitoring"
+    release: "prometheus"
+  annotations: {}
+
+# Transaction generator configuration
+txgen:
+  enabled: true
+  image:
+    repository: 0xbinbash/token-tx
+    tag: 1.0.2
+    digest: ""  # Optional
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  args:
+    - --to-address=0x1DA9B48928EC505040Eb18a4E1e21aBfCc4Ccc46
+    - --amount=10
+    - --legacy-gas
+  secrets:
+    senderPk: "" # Populate genesis.json with an address you have access to and grant funds
+  podAnnotations: {}
+  podLabels:
+    app.kubernetes.io/component: "txgen"
+  podSecurityContext:
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsUser: 10001
+    runAsGroup: 10001
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  livenessProbe:
+    httpGet:
+      path: /live
+      port: 8080
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    exec:
+     command:
+      - /bin/sh
+      - -c
+      - curl -s http://localhost:8080/health/ready | jq '.status == "ready"'
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+ingress:
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/ip-address-type: ipv4
+    alb.ingress.kubernetes.io/certificate-arn: "" # Replace with your own certificate ARN
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+  className: alb
+
+kube-prometheus-stack:
+  grafana:
+    enabled: true
+    service:
+      type: LoadBalancer
+      port: 80
+
+# Backup configuration using Gemini operator
+# Gemini will install them automatically if backup.enabled=true and gemini.installCRDs=true
+backup:
+  enabled: true
+  # Schedule for backups - array of schedule entries
+  schedule:
+    - every: day
+      keep: 2
+  snapshotClass: ""
+
+# Gemini subchart configuration
+gemini:
+  installCRDs: true
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

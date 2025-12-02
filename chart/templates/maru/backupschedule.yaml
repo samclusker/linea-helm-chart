@@ -1,0 +1,29 @@
+{{- if .Values.backup.enabled }}
+{{- $component := "maru" }}
+apiVersion: gemini.fairwinds.com/v1
+kind: SnapshotGroup
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-backup
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    helm.sh/chart: {{ include "linea-dev.chart" . }}
+    {{- include "linea-dev.selectorLabels" . | nindent 4 }}
+    {{- if .Chart.AppVersion }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    {{- end }}
+    {{- with .Values.global.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    app.kubernetes.io/component: backup
+spec:
+  persistentVolumeClaim:
+    claimName: "data-{{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-0"
+  schedule:
+    {{- range .Values.backup.schedule }}
+    - every: {{ .every | quote }}
+      keep: {{ .keep }}
+    {{- end }}
+  template:
+    spec:
+      volumeSnapshotClassName: {{ include "linea-dev.name" . }}-snapshot-class
+{{- end }}

@@ -1,0 +1,13 @@
+{{- if not (empty .Values.maru.storage.snapshotHandle) }}
+{{- $component := "maru" }}
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+  namespace: {{ include "linea-dev.namespace" . }}
+spec:
+  volumeSnapshotClassName: {{ include "linea-dev.name" . }}-snapshot-class
+  source:
+    volumeSnapshotContentName: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-content
+{{- end }}
+

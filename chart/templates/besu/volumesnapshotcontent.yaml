@@ -1,0 +1,16 @@
+{{- if not (empty .Values.besu.storage.snapshotHandle) }}
+{{- $component := "besu" }}
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotContent
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-content
+spec:
+  deletionPolicy: Retain
+  driver: ebs.csi.aws.com
+  source:
+    snapshotHandle: {{ .Values.besu.storage.snapshotHandle }}
+  volumeSnapshotRef:
+    kind: VolumeSnapshot
+    name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
