@@ -8,6 +8,7 @@ global:
   labels:
     app.kubernetes.io/part-of: "linea-dev"
   annotations: {}
+  region: ""
 
 serviceAccount:
   create: true
@@ -81,6 +82,8 @@ sequencer:
   affinity: {}
   # IMPORTANT: For production, use external secret management systems instead, see README.md for more details
   secrets:
+    isAwsSecretEnabled: true
+    sequencerKeySecretName: "sequencer_key" # Do not use hyphens in secret names
     data:
       # key: |
       #   0x0000000
@@ -158,6 +161,8 @@ maru:
   affinity: {}
   # IMPORTANT: For production, use external secret management systems instead, see README.md for more details
   secrets:
+    isAwsSecretEnabled: true
+    maruKeySecretName: "maru_key" # Do not use hyphens in secret names
     data:
     #   key: |
     #     0x0000000
@@ -333,8 +338,10 @@ ethstats:
   tolerations: []
   affinity: {}
   secrets:
+    isAwsSecretEnabled: true
+    wsSecretName: "ethstats_ws_secret" # Do not use hyphens in secret names
     data:
-      WS_SECRET: "12345"
+      # WS_SECRET: ""
   additionalEnv: []
   service:
     type: LoadBalancer
@@ -371,7 +378,9 @@ txgen:
     - --amount=10
     - --legacy-gas
   secrets:
-    senderPk: "" # Populate genesis.json with an address you have access to and grant funds
+    isAwsSecretEnabled: true
+    senderPkSecretName: "txgen_sender_pk" # Do not use hyphens in secret names
+    senderPk: "" # Override common/genesis.json to include an address you have access to.
   podAnnotations: {}
   podLabels:
     app.kubernetes.io/component: "txgen"

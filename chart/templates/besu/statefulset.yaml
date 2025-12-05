@@ -20,6 +20,7 @@ spec:
       labels:
         {{- include "linea-dev.component.labels.with.custom" (dict "component" $component "customLabels" .Values.besu.podLabels "root" .) | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "linea-dev.serviceAccountName" . }}
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -50,7 +51,7 @@ spec:
             - |
               SEQUENCER_IP=$(getent hosts {{ include "linea-dev.component.name" (dict "component" "sequencer" "root" .) }}-0.{{ include "linea-dev.component.name" (dict "component" "sequencer" "root" .) }}.{{ .Release.Namespace }}.svc.cluster.local | awk '{print $1}')
               exec besu-untuned \
-                --ethstats=ws://besu-node:{{ .Values.ethstats.secrets.data.WS_SECRET }}@{{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}:{{ .Values.ethstats.service.ports.http }} \
+                --ethstats=ws://besu-node:${WS_SECRET}@{{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}:{{ .Values.ethstats.service.ports.http }} \
                 --bootnodes=enode://14408801a444dafc44afbccce2eb755f902aed3b5743fed787b3c790e021fef28b8c827ed896aa4e8fb46e22bd67c39f994a73768b4b382f8597b0d44370e15d@${SEQUENCER_IP}:30303 \
                 {{- range $index, $arg := .Values.besu.args }}
                 {{ $arg }}{{ if ne $index (sub (len $.Values.besu.args) 1) }} \{{ end }}
@@ -62,6 +63,17 @@ spec:
           env:
             - name: LOG4J_CONFIGURATION_FILE
               value: /var/lib/besu/log4j.xml
+            {{- if or .Values.ethstats.secrets.isAwsSecretEnabled .Values.ethstats.secrets.data }}
+            - name: WS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.ethstats.secrets.isAwsSecretEnabled }}
+                  name: {{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}-aws-sm-secret
+                  {{- else if .Values.ethstats.secrets.data }}
+                  name: {{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}-secret
+                  {{- end }}
+                  key: "{{ .Values.ethstats.secrets.wsSecretName }}"
+            {{- end }}
             {{- with .Values.besu.additionalEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -152,6 +164,14 @@ spec:
               subPath: {{ $key }}
             {{- end }}
             {{- end }}
+            {{- if .Values.ethstats.secrets.isAwsSecretEnabled }}
+            - name: secrets-store
+            {{- else if .Values.ethstats.secrets.data }}
+            - name: ws-secret
+            {{- end }}
+              mountPath: /var/lib/besu/ws_secret
+              subPath: ws_secret
+              readOnly: true
       volumes:
         - name: defaults
           configMap:
@@ -165,6 +185,18 @@ spec:
         - name: additional-files
           configMap:
             name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-additional-files
+        {{- end }}
+        {{- if .Values.ethstats.secrets.isAwsSecretEnabled }}
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}-aws-secrets-class
+        {{- else if .Values.ethstats.secrets.data }}
+        - name: ws-secret
+          secret:
+            secretName: {{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}-secret
         {{- end }}
   volumeClaimTemplates:
     - metadata:

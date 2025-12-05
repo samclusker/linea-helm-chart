@@ -21,6 +21,7 @@ spec:
       labels:
         {{- include "linea-dev.component.labels.with.custom" (dict "component" $component "customLabels" .Values.txgen.podLabels "root" .) | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "linea-dev.serviceAccountName" . }}
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -61,8 +62,12 @@ spec:
           - name: SENDER_PK
             valueFrom:
               secretKeyRef:
+                {{- if .Values.txgen.secrets.isAwsSecretEnabled }}
+                name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-aws-sm-secret
+                {{- else if .Values.txgen.secrets.data }}
                 name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
-                key: SENDER_PK
+                {{- end }}
+                key: "{{ .Values.txgen.secrets.senderPkSecretName }}"
           {{- with .Values.txgen.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -75,4 +80,26 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            {{- if .Values.txgen.secrets.isAwsSecretEnabled }}
+            - name: secrets-store
+            {{- else if .Values.txgen.secrets.data }}
+            - name: sender-pk
+            {{- end }}
+              mountPath: /app/config/sender-pk
+              subPath: sender-pk
+              readOnly: true
+      volumes:
+        {{- if .Values.txgen.secrets.isAwsSecretEnabled }}
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-aws-secrets-class
+        {{- else if .Values.txgen.secrets.data }}
+        - name: sender-pk
+          secret:
+            secretName: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
+        {{- end }}
 {{- end }}

@@ -1,0 +1,15 @@
+global:
+  domain: ${global.domain}
+  region: ${global.region}
+
+ingress:
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/ip-address-type: ipv4
+    alb.ingress.kubernetes.io/certificate-arn: "${ingress.annotations.certificate_arn}"
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: ${service_account.annotations.sa_role_arn}

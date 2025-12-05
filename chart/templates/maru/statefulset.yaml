@@ -20,6 +20,7 @@ spec:
       labels:
         {{- include "linea-dev.component.labels.with.custom" (dict "component" $component "customLabels" .Values.maru.podLabels "root" .) | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "linea-dev.serviceAccountName" . }}
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -109,12 +110,6 @@ spec:
               subPath: genesis.json
               readOnly: true
             {{- end }}
-            {{- if .Values.maru.secrets.data }}
-            - name: key
-              mountPath: /opt/consensys/maru/key
-              subPath: key
-              readOnly: true
-            {{- end }}
             {{- if .Values.maru.files.additionalFiles }}
             {{- range $key, $value := .Values.maru.files.additionalFiles }}
             - name: additional-files
@@ -122,6 +117,14 @@ spec:
               subPath: {{ $key }}
             {{- end }}
             {{- end }}
+            {{- if or .Values.maru.secrets.isAwsSecretEnabled }}
+            - name: secrets-store
+            {{- else if .Values.maru.secrets.data }}
+            - name: key
+            {{- end }}
+              mountPath: /opt/consensys/maru/key
+              subPath: key
+              readOnly: true
       volumes:
         - name: defaults
           configMap:
@@ -131,15 +134,22 @@ spec:
           configMap:
             name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-overrides
         {{- end }}
-        {{- if .Values.maru.secrets.data }}
-        - name: key
-          secret:
-            secretName: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
-        {{- end }}
         {{- if .Values.maru.files.additionalFiles }}
         - name: additional-files
           configMap:
             name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-additional-files
+        {{- end }}
+        {{- if .Values.maru.secrets.isAwsSecretEnabled }}
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-aws-secrets-class
+        {{- else if .Values.maru.secrets.data }}
+        - name: key
+          secret:
+            secretName: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
         {{- end }}
   volumeClaimTemplates:
     - metadata:

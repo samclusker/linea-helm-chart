@@ -1,6 +1,6 @@
 # linea-dev
 
-![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.1.0](https://img.shields.io/badge/Version-1.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Linea stack chart with sequencer, maru, besu and visualizer services
 
@@ -99,7 +99,9 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | ethstats.resources.limits.memory | string | `"512Mi"` |  |
 | ethstats.resources.requests.cpu | string | `"100m"` |  |
 | ethstats.resources.requests.memory | string | `"128Mi"` |  |
-| ethstats.secrets.data.WS_SECRET | string | `"12345"` |  |
+| ethstats.secrets.data | string | `nil` |  |
+| ethstats.secrets.isAwsSecretEnabled | bool | `true` |  |
+| ethstats.secrets.wsSecretName | string | `"ethstats_ws_secret"` |  |
 | ethstats.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | ethstats.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | ethstats.service.annotations | string | `nil` |  |
@@ -119,6 +121,7 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | global.labels."app.kubernetes.io/part-of" | string | `"linea-dev"` |  |
 | global.nameOverride | string | `""` |  |
 | global.namespace | string | `"linea"` |  |
+| global.region | string | `""` |  |
 | ingress.annotations."alb.ingress.kubernetes.io/certificate-arn" | string | `""` |  |
 | ingress.annotations."alb.ingress.kubernetes.io/ip-address-type" | string | `"ipv4"` |  |
 | ingress.annotations."alb.ingress.kubernetes.io/scheme" | string | `"internet-facing"` |  |
@@ -161,7 +164,9 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | maru.resources.limits.memory | string | `"2Gi"` |  |
 | maru.resources.requests.cpu | string | `"500m"` |  |
 | maru.resources.requests.memory | string | `"1Gi"` |  |
-| maru.secrets | string | `nil` |  |
+| maru.secrets.data | string | `nil` |  |
+| maru.secrets.isAwsSecretEnabled | bool | `true` |  |
+| maru.secrets.maruKeySecretName | string | `"maru_key"` |  |
 | maru.service.annotations."prometheus.io/path" | string | `"/metrics"` |  |
 | maru.service.annotations."prometheus.io/port" | string | `"9545"` |  |
 | maru.service.annotations."prometheus.io/scrape" | string | `"true"` |  |
@@ -212,7 +217,9 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | sequencer.resources.limits.memory | string | `"4Gi"` |  |
 | sequencer.resources.requests.cpu | string | `"500m"` |  |
 | sequencer.resources.requests.memory | string | `"2Gi"` |  |
-| sequencer.secrets | string | `nil` |  |
+| sequencer.secrets.data | string | `nil` |  |
+| sequencer.secrets.isAwsSecretEnabled | bool | `true` |  |
+| sequencer.secrets.sequencerKeySecretName | string | `"sequencer_key"` |  |
 | sequencer.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sequencer.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | sequencer.service.annotations."prometheus.io/path" | string | `"/metrics"` |  |
@@ -271,7 +278,9 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | txgen.resources.limits.memory | string | `"512Mi"` |  |
 | txgen.resources.requests.cpu | string | `"100m"` |  |
 | txgen.resources.requests.memory | string | `"128Mi"` |  |
+| txgen.secrets.isAwsSecretEnabled | bool | `true` |  |
 | txgen.secrets.senderPk | string | `""` |  |
+| txgen.secrets.senderPkSecretName | string | `"txgen_sender_pk"` |  |
 | txgen.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | txgen.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | txgen.securityContext.runAsGroup | int | `10001` |  |

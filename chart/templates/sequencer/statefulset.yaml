@@ -34,12 +34,14 @@ spec:
         - name: sequencer
           image: "{{ .Values.sequencer.image.repository }}:{{ .Values.sequencer.image.tag }}{{ if .Values.sequencer.image.digest }}@{{ .Values.sequencer.image.digest }}{{ end }}"
           imagePullPolicy: {{ .Values.sequencer.image.pullPolicy }}
-          command: ["besu-untuned"]
+          command: ["sh", "-c"]
           args:
-            - --ethstats=ws://sequencer-node:{{ .Values.ethstats.secrets.data.WS_SECRET }}@{{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}:{{ .Values.ethstats.service.ports.http }}
-            {{- range .Values.sequencer.args }}
-            - {{ . }}
-            {{- end }}
+            - |
+              exec besu-untuned \
+                --ethstats=ws://sequencer-node:${WS_SECRET}@{{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}:{{ .Values.ethstats.service.ports.http }} \
+                {{- range $index, $arg := .Values.sequencer.args }}
+                {{ $arg }}{{ if ne $index (sub (len $.Values.sequencer.args) 1) }} \{{ end }}
+                {{- end }}
           {{- with .Values.sequencer.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
@@ -47,6 +49,17 @@ spec:
           env:
             - name: LOG4J_CONFIGURATION_FILE
               value: /var/lib/besu/log4j.xml
+            {{- if or .Values.ethstats.secrets.isAwsSecretEnabled .Values.ethstats.secrets.data }}
+            - name: WS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.ethstats.secrets.isAwsSecretEnabled }}
+                  name: {{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}-aws-sm-secret
+                  {{- else if .Values.ethstats.secrets.data }}
+                  name: {{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}-secret
+                  {{- end }}
+                  key: "{{ .Values.ethstats.secrets.wsSecretName }}"
+            {{- end }}
             {{- with .Values.sequencer.additionalEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -130,12 +143,6 @@ spec:
               subPath: denylist.txt
               readOnly: true
             {{- end }}
-            {{- if .Values.sequencer.secrets.data }}
-            - name: key
-              mountPath: /var/lib/besu/key
-              subPath: key
-              readOnly: true
-            {{- end }}
             {{- if .Values.sequencer.files.additionalFiles }}
             {{- range $key, $value := .Values.sequencer.files.additionalFiles }}
             - name: additional-files
@@ -143,6 +150,22 @@ spec:
               subPath: {{ $key }}
             {{- end }}
             {{- end }}
+            {{- if or .Values.sequencer.secrets.isAwsSecretEnabled }}
+            - name: secrets-store-key
+            {{- else if .Values.sequencer.secrets.data }}
+            - name: key
+            {{- end }}
+              mountPath: /var/lib/besu/key
+              subPath: key
+              readOnly: true
+            {{- if .Values.ethstats.secrets.isAwsSecretEnabled }}
+            - name: secrets-store-ws-secret
+            {{- else if .Values.ethstats.secrets.data }}
+            - name: ws-secret
+            {{- end }}
+              mountPath: /var/lib/besu/ws-secret
+              subPath: ws-secret
+              readOnly: true
       volumes:
         - name: defaults
           configMap:
@@ -157,23 +180,30 @@ spec:
           configMap:
             name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-additional-files
         {{- end }}
-        {{- if .Values.sequencer.secrets.data }}
+        {{- if .Values.maru.secrets.isAwsSecretEnabled }}
+        - name: secrets-store-key
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-aws-secrets-class
+        {{- else if .Values.maru.secrets.data }}
         - name: key
           secret:
             secretName: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
         {{- end }}
-      {{- with .Values.sequencer.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.sequencer.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.sequencer.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- if .Values.ethstats.secrets.isAwsSecretEnabled }}
+        - name: secrets-store-ws-secret
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}-aws-secrets-class
+        {{- else if .Values.ethstats.secrets.data }}
+        - name: ws-secret
+          secret:
+            secretName: {{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}-secret
+        {{- end }}
   volumeClaimTemplates:
     - metadata:
         name: data

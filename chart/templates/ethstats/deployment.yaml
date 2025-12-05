@@ -20,6 +20,7 @@ spec:
       labels:
         {{- include "linea-dev.component.labels.with.custom" (dict "component" $component "customLabels" .Values.ethstats.podLabels "root" .) | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "linea-dev.serviceAccountName" . }}
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -41,13 +42,15 @@ spec:
               containerPort: {{ .Values.ethstats.service.ports.http }}
               protocol: TCP
           env:
-            {{- if .Values.ethstats.secrets.data }}
             - name: WS_SECRET
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.ethstats.secrets.isAwsSecretEnabled }}
+                  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-aws-sm-secret
+                  {{- else if .Values.ethstats.secrets.data }}
                   name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
-                  key: WS_SECRET
-            {{- end }}
+                  {{- end }}
+                  key: "{{ .Values.ethstats.secrets.wsSecretName }}"
             {{- with .Values.ethstats.additionalEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -63,3 +66,25 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            {{- if .Values.ethstats.secrets.isAwsSecretEnabled }}
+            - name: secrets-store
+            {{- else if .Values.ethstats.secrets.data }}
+            - name: ws-secret
+            {{- end }}
+              mountPath: /app/ws_secret
+              subPath: ws_secret
+              readOnly: true
+      volumes:
+        {{- if .Values.ethstats.secrets.isAwsSecretEnabled }}
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-aws-secrets-class
+        {{- else if .Values.ethstats.secrets.data }}
+        - name: ws-secret
+          secret:
+            secretName: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-secret
+        {{- end }}

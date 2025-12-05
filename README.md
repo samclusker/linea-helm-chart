@@ -1,6 +1,6 @@
 # Linea Helm Chart
 
-![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.1.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for deploying the Linea blockchain stack on Kubernetes, including sequencer, Maru, Besu, and visualization services.
 
@@ -114,16 +114,22 @@ helm status linea -n linea
 
 ## Secrets Management
 
-### Current Implementation
+Secrets can be deployed by populating `values.yaml` (for development purposes), but for production it is recommended that secrets are either created manually before deploying the chart or if using AWS, populate the secret names for the secrets manager addon. 
 
-Currently, secrets can be deployed by populating `values.yaml` (for development purposes), but for production it is recommended that secrets are created manually before deploying the chart. The following secrets are required:
-
+The following secrets are required (manual):
 - `<release-name>-sequencer-secret`: Contains the sequencer node private key
 - `<release-name>-maru-secret`: Contains Maru configuration secrets
 - `<release-name>-ethstats-secret`: Contains Ethstats API secrets
 - `<release-name>-txgen-secret`: Contains transaction generator sender private key
 
-#### Creating Secrets
+Secret name values for AWS Secrets Manager:
+
+- `txgen.secrets.senderPkSecretName`
+- `ethstats.secrets.wsSecretName`
+- `maru.secrets.maruKeySecretName`
+- `sequencer.secrets.sequencerKeySecretName`
+
+#### Creating Secrets (Manual)
 
 **Sequencer Secret**:
 ```bash
@@ -153,40 +159,38 @@ kubectl create secret generic <release-name>-txgen-secret \
     --from-literal=senderPk=<SENDER_PRIVATE_KEY_HEX>
 ```
 
-### TO DO: Secret Manager Integration
-
-**Future Enhancement**: Implement support for external secret management systems such as:
-- [External Secrets Operator](https://external-secrets.io/)
-- [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)
-- [HashiCorp Vault](https://www.vaultproject.io/)
-- [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/)
-
-This will allow secrets to be managed externally and synced to Kubernetes, improving security and compliance in production environments.
-
 # Deploy Linea Helm chart
 
-Here's a basic example of deploying via Terraform
+There is a basic example of a Terraform project which deploys the chart in the `terraform/` directory.
 
+```bash
+cd terraform
+
+terraform init
+
+terraform apply -var-file terraform.prod.tfvars
+```
+
+Example `.tfvars` file:
 ```hcl
-resource "helm_release" "linea" {
-  name       = "linea"
-  chart      = "chart"
-  namespace  = kubernetes_namespace.linea.metadata[0].name
-  create_namespace = false
+cluster_name            = "eks-task-production"
+cluster_endpoint        = "https://foo.gr7.<region>.eks.amazonaws.com"
+cluster_ca_certificate  = "...."
+oidc_provider_arn       = "arn:aws:iam::<accountId>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>"
 
-  values = [
-    file("${path.module}/values.yaml")
-  ]
+namespace    = "linea"
+release_name = "linea"
 
-  set {
-    name  = "global.namespace"
-    value = "linea"
-  }
+# IRSA Configuration (optional)
+create_irsa_role = true
 
-  depends_on = [
-    kubernetes_namespace.linea
-  ]
+tags = {
+  managedby   = "terraform"
+  project     = "eks-cluster"
 }
+
+dns_zone                = "foo.bar"
+ingress_certificate_arn = "arn:aws:acm:<region>:<accountId>:certificate/<certId>"
 ```
 
 ## Configuration
