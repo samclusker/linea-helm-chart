@@ -8,15 +8,9 @@ metadata:
     {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
 data:
   config.toml: |
-{{- .Files.Get "files/sequencer/config.toml" | nindent 4 }}
+{{- tpl (.Files.Get "files/sequencer/config.toml.tpl") . | nindent 4 }}
   log4j.xml: |
 {{- .Files.Get "files/sequencer/log4j.xml" | nindent 4 }}
-  genesis.json: |
-{{- .Files.Get "files/common/genesis.json" | nindent 4 }}
-  tracelimits.toml: |
-{{- .Files.Get "files/common/tracelimits.toml" | nindent 4 }}
-  denylist.txt: |
-{{- .Files.Get "files/common/denylist.txt" | nindent 4 }}
 {{- if .Values.sequencer.files.overrides }}
 ---
 apiVersion: v1

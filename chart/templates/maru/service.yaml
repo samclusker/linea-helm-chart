@@ -14,16 +14,16 @@ metadata:
     {{- . | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ .Values.maru.service.type }}
+  clusterIP: None
+  type: ClusterIP
   ports:
-    - port: {{ .Values.maru.service.ports.http }}
-      targetPort: http
+    - port: {{ .Values.maru.service.ports.p2p }}
+      targetPort: p2p
       protocol: TCP
-      name: http
+      name: p2p
     - port: {{ .Values.maru.service.ports.metrics }}
       targetPort: metrics
       protocol: TCP
       name: metrics
   selector:
     {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 4 }}
-

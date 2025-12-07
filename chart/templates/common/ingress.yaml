@@ -6,6 +6,11 @@ metadata:
   namespace: {{ include "linea-dev.namespace" . }}
   annotations:
     {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    {{- if .Values.besu.ingress.enabled }}
+    # WebSocket
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
@@ -20,6 +25,16 @@ spec:
               name: {{ include "linea-dev.component.name" (dict "component" "besu" "root" .) }}
               port:
                 number: {{ .Values.besu.service.ports.rpc }}
+    - host: "besu-ws.{{ .Values.global.domain }}"
+      http:
+        paths:
+        - pathType: Prefix
+          path: "/ws"
+          backend:
+            service:
+              name: {{ include "linea-dev.component.name" (dict "component" "besu" "root" .) }}
+              port:
+                number: {{ .Values.besu.service.ports.wsRpc }}
     {{- end }}
     {{- if .Values.ethstats.ingress.enabled }}
     - host: "ethstats.{{ .Values.global.domain }}"

@@ -13,13 +13,13 @@ max-peers=10
 
 # engine
 engine-host-allowlist=["*"]
-engine-rpc-port=8550
+engine-rpc-port={{ .Values.sequencer.service.ports.engine }}
 engine-jwt-disabled=true
 
 # rpc
 rpc-http-enabled=true
 rpc-http-host="0.0.0.0"
-rpc-http-port=8545
+rpc-http-port={{ .Values.sequencer.service.ports.rpc }}
 rpc-http-api=["ADMIN","DEBUG","NET","ETH","ENGINE","CLIQUE","MINER","WEB3","TRACE","LINEA"]
 rpc-http-cors-origins=["*"]
 rpc-http-max-active-connections=20000
@@ -27,7 +27,7 @@ rpc-http-max-active-connections=20000
 # ws
 rpc-ws-enabled=true
 rpc-ws-host="0.0.0.0"
-rpc-ws-port=8546
+rpc-ws-port={{ .Values.sequencer.service.ports.wsRpc }}
 rpc-ws-api=["ADMIN","DEBUG","NET","ETH","CLIQUE","MINER","WEB3","TRACE","LINEA"]
 rpc-ws-max-active-connections=200
 
@@ -37,7 +37,7 @@ graphql-http-enabled=false
 # metrics
 metrics-enabled=true
 metrics-host="0.0.0.0"
-metrics-port=9545
+metrics-port={{ .Values.sequencer.service.ports.metrics }}
 
 tx-pool-no-local-priority=false
 # tx-pool-enable-balance-check=true # this would make e2e test fail to deploy L2 contracts

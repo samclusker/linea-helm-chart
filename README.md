@@ -1,6 +1,6 @@
 # Linea Helm Chart
 
-![Version: 1.1.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for deploying the Linea blockchain stack on Kubernetes, including sequencer, Maru, Besu, and visualization services.
 
@@ -18,6 +18,7 @@ The chart includes production-ready features such as:
 - Horizontal Pod Autoscaling (HPA) for Besu nodes
 - Prometheus monitoring integration via ServiceMonitors
 - Automated backups using Gemini operator
+- Network policies for enhanced security
 - Configurable resource limits and requests
 - Comprehensive labeling and annotations for Kubernetes resource management
 
@@ -114,7 +115,7 @@ helm status linea -n linea
 
 ## Secrets Management
 
-Secrets can be deployed by populating `values.yaml` (for development purposes), but for production it is recommended that secrets are either created manually before deploying the chart or if using AWS, populate the secret names for the secrets manager addon. 
+Secrets can be deployed by populating `values.yaml` (for development purposes), but for production it is recommended that secrets are either created manually before deploying the chart or if using AWS, populate the secret names for the secrets manager addon.
 
 The following secrets are required (manual):
 - `<release-name>-sequencer-secret`: Contains the sequencer node private key

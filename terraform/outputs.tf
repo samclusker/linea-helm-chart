@@ -15,12 +15,12 @@ output "helm_release_status" {
 
 output "irsa_role_arn" {
   description = "ARN of the IAM role for service account (if created)"
-  value       = var.use_aws_secrets ? module.linea_app_irsa[0].iam_role_arn : null
+  value       = var.use_aws_secrets ? module.linea_app_irsa[0].arn : null
 }
 
 output "irsa_role_name" {
   description = "Name of the IAM role for service account (if created)"
-  value       = var.use_aws_secrets ? module.linea_app_irsa[0].iam_role_name : null
+  value       = var.use_aws_secrets ? module.linea_app_irsa[0].name : null
 }
 
 output "service_account_name" {

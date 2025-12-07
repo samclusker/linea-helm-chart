@@ -52,7 +52,7 @@ spec:
               SEQUENCER_IP=$(getent hosts {{ include "linea-dev.component.name" (dict "component" "sequencer" "root" .) }}-0.{{ include "linea-dev.component.name" (dict "component" "sequencer" "root" .) }}.{{ .Release.Namespace }}.svc.cluster.local | awk '{print $1}')
               exec besu-untuned \
                 --ethstats=ws://besu-node:${WS_SECRET}@{{ include "linea-dev.component.name" (dict "component" "ethstats" "root" .) }}:{{ .Values.ethstats.service.ports.http }} \
-                --bootnodes=enode://14408801a444dafc44afbccce2eb755f902aed3b5743fed787b3c790e021fef28b8c827ed896aa4e8fb46e22bd67c39f994a73768b4b382f8597b0d44370e15d@${SEQUENCER_IP}:30303 \
+                --bootnodes=enode://14408801a444dafc44afbccce2eb755f902aed3b5743fed787b3c790e021fef28b8c827ed896aa4e8fb46e22bd67c39f994a73768b4b382f8597b0d44370e15d@${SEQUENCER_IP}:{{ .Values.sequencer.service.ports.p2p }} \
                 {{- range $index, $arg := .Values.besu.args }}
                 {{ $arg }}{{ if ne $index (sub (len $.Values.besu.args) 1) }} \{{ end }}
                 {{- end }}
@@ -81,8 +81,14 @@ spec:
             - name: json-rpc
               containerPort: {{ .Values.besu.service.ports.rpc }}
               protocol: TCP
+            - name: json-rpc-ws
+              containerPort: {{ .Values.besu.service.ports.wsRpc }}
+              protocol: TCP
             - name: engine
               containerPort: {{ .Values.besu.service.ports.engine }}
+              protocol: TCP
+            - name: p2p
+              containerPort: {{ .Values.besu.service.ports.p2p }}
               protocol: TCP
             - name: metrics
               containerPort: {{ .Values.besu.service.ports.metrics }}
@@ -124,35 +130,35 @@ spec:
               subPath: log4j.xml
               readOnly: true
             {{- end }}
-            {{- if hasKey .Values.besu.files.overrides "denylist.txt" }}
-            - name: overrides
+            {{- if hasKey .Values.common.files.overrides "denylist.txt" }}
+            - name: common-overrides
               mountPath: /var/lib/besu/deny-list.txt
               subPath: denylist.txt
               readOnly: true
             {{- else }}
-            - name: defaults
+            - name: common-defaults
               mountPath: /var/lib/besu/deny-list.txt
               subPath: denylist.txt
               readOnly: true
             {{- end }}
-            {{- if hasKey .Values.besu.files.overrides "genesis.json" }}
-            - name: overrides
+            {{- if hasKey .Values.common.files.overrides "genesis.json" }}
+            - name: common-overrides
               mountPath: /var/lib/besu/genesis.json
               subPath: genesis.json
               readOnly: true
             {{- else }}
-            - name: defaults
+            - name: common-defaults
               mountPath: /var/lib/besu/genesis.json
               subPath: genesis.json
               readOnly: true
             {{- end }}
-            {{- if hasKey .Values.besu.files.overrides "tracelimits.toml" }}
-            - name: overrides
+            {{- if hasKey .Values.common.files.overrides "tracelimits.toml" }}
+            - name: common-overrides
               mountPath: /var/lib/besu/traces-limits.toml
               subPath: tracelimits.toml
               readOnly: true
             {{- else }}
-            - name: defaults
+            - name: common-defaults
               mountPath: /var/lib/besu/traces-limits.toml
               subPath: tracelimits.toml
               readOnly: true
@@ -180,6 +186,14 @@ spec:
         - name: overrides
           configMap:
             name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-overrides
+        {{- end }}
+        - name: common-defaults
+          configMap:
+            name: {{ include "linea-dev.name" . }}-defaults
+        {{- if .Values.common.files.overrides }}
+        - name: common-overrides
+          configMap:
+            name: {{ include "linea-dev.name" . }}-overrides
         {{- end }}
         {{- if .Values.besu.files.additionalFiles }}
         - name: additional-files

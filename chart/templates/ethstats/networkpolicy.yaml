@@ -1,0 +1,44 @@
+{{- if .Values.ethstats.networkPolicy.enabled }}
+{{- $component := "ethstats" }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-network-policy
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow HTTP from sequencer
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: {{ include "linea-dev.name" . }}
+            app.kubernetes.io/component: sequencer
+      ports:
+      - protocol: TCP
+        port: {{ .Values.ethstats.service.ports.http }}
+    # Allow HTTP from besu
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: {{ include "linea-dev.name" . }}
+            app.kubernetes.io/component: besu
+      ports:
+      - protocol: TCP
+        port: {{ .Values.ethstats.service.ports.http }}
+    # Allow HTTP from ingress
+    {{- if .Values.ethstats.ingress.enabled }}
+    - from: []
+      ports:
+      - protocol: TCP
+        port: {{ .Values.ethstats.service.ports.http }}
+    {{- end }}
+{{- end }}
+

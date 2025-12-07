@@ -91,20 +91,43 @@ sequencer:
   # Override default config files or add additional files
   files:
     overrides: {}
+    # config.toml: |
+    #   # Custom Sequencer configuration
+    #   [Sequencer]
+    #   port = 8080
+    # ....
+    # log4j.xml: |
+    #   # Custom Log4j configuration
+    #   [Logger]
+    #   name = "org.apache.logging.log4j.core.appender.ConsoleAppender"
+    #   level = "info"
+    #   additivity = "false"
+    #  .....
     additionalFiles: {}
   additionalEnv: []
   service:
     type: ClusterIP
     ports:
+      p2p: 30303
       metrics: 9545
       engine: 8550
       rpc: 8545
+      wsRpc: 8546
     annotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9545"
       prometheus.io/path: "/metrics"
     labels:
       app.kubernetes.io/component: "sequencer"
+  # NetworkPolicy configuration
+  networkPolicy:
+    enabled: true  # Set to true to enable NetworkPolicies
+    # Optional: Override Prometheus namespace (defaults to same namespace as release)
+    prometheusNamespace: ""
+    # Optional: Override Prometheus pod labels (defaults to standard prometheus labels)
+    prometheusLabels: {}
+      # app.kubernetes.io/name: prometheus
+      # app.kubernetes.io/component: prometheus
 
 # Maru configuration
 maru:
@@ -174,6 +197,20 @@ maru:
       #   # Custom Maru configuration
       #   [maru]
       #   port = 8080
+      # ....
+      # log4j.xml: |
+      #   # Custom Log4j configuration
+      #   [Logger]
+      #   name = "org.apache.logging.log4j.core.appender.ConsoleAppender"
+      #   level = "info"
+      #   additivity = "false"
+      #   ...
+      #  .....
+      # genesis.json: |
+      #   # Custom Genesis configuration
+      #   [Eth]
+      #   NetworkId = 59140
+      #  .....
     # Additional files to mount (beyond default config files)
     additionalFiles: {}
       # mountPath: /opt/consensys/maru/additional
@@ -185,9 +222,9 @@ maru:
     #   value: "custom-value"
   # Service configuration
   service:
-    type: ClusterIP
     ports:
-      http: 8080
+      api: 8080
+      p2p: 9000
       metrics: 9545
     annotations:
       prometheus.io/scrape: "true"
@@ -195,6 +232,15 @@ maru:
       prometheus.io/path: "/metrics"
     labels:
       app.kubernetes.io/component: "maru"
+  # NetworkPolicy configuration
+  networkPolicy:
+    enabled: true  # Set to true to enable NetworkPolicies
+    # Optional: Override Prometheus namespace (defaults to same namespace as release)
+    prometheusNamespace: ""
+    # Optional: Override Prometheus pod labels (defaults to standard prometheus labels)
+    prometheusLabels: {}
+      # app.kubernetes.io/name: prometheus
+      # app.kubernetes.io/component: prometheus
 
 # Besu RPC node configuration
 besu:
@@ -225,11 +271,11 @@ besu:
       - ALL
   resources:
     requests:
-      cpu: 1000m
-      memory: 4Gi
+      cpu: 300m
+      memory: 1Gi
     limits:
-      cpu: 4000m
-      memory: 8Gi
+      cpu: 1
+      memory: 1Gi
   storage:
     size: 550Gi
     storageClassName: "gp2"
@@ -260,8 +306,15 @@ besu:
       #   [Eth]
       #   NetworkId = 59140
       #   [RPC]
-      #   httpPort = 8545
-      #   wsPort = 8546
+      #   ...
+      # log4j.xml: |
+      #   # Custom Log4j configuration
+      #   [Logger]
+      #   name = "org.apache.logging.log4j.core.appender.ConsoleAppender"
+      #   level = "info"
+      #   additivity = "false"
+      #   ...
+      #  .....
     # Additional files to mount (beyond default config files)
     additionalFiles: {}
       # mountPath: /var/lib/besu/additional
@@ -275,9 +328,11 @@ besu:
   service:
     type: LoadBalancer
     ports:
-      rpc: 8545
-      engine: 8550
       metrics: 9545
+      engine: 8550
+      rpc: 8545
+      wsRpc: 8546
+      p2p: 30303
     annotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9545"
@@ -293,6 +348,34 @@ besu:
     targetMemoryUtilizationPercentage: 85
   ingress:
     enabled: true
+  # NetworkPolicy configuration
+  networkPolicy:
+    enabled: true  # Set to true to enable NetworkPolicies
+    # Optional: Override Prometheus namespace (defaults to same namespace as release)
+    prometheusNamespace: ""
+    # Optional: Override Prometheus pod labels (defaults to standard prometheus labels)
+    prometheusLabels: {}
+      # app.kubernetes.io/name: prometheus
+      # app.kubernetes.io/component: prometheus
+
+common:
+  files:
+    overrides: {}
+    # genesis.json: |
+    #   # Custom Genesis configuration
+    #   [Eth]
+    #   NetworkId = 59140
+    #  .....
+    # tracelimits.toml: |
+    #   # Custom Tracelimits configuration
+    #   [traces-limits]
+    #   ADD = 262144
+    #  .....
+    # denylist.txt: |
+    #   # Custom Denylist configuration
+    #   - 0x0000000000000000000000000000000000000000
+    #  .....
+
 
 # Ethstats configuration
 ethstats:
@@ -353,6 +436,9 @@ ethstats:
       app.kubernetes.io/component: "ethstats"
   ingress:
     enabled: true
+  # NetworkPolicy configuration
+  networkPolicy:
+    enabled: true  # Set to true to enable NetworkPolicies
 
 # ServiceMonitor for Prometheus metrics
 serviceMonitor:
@@ -368,10 +454,10 @@ serviceMonitor:
 txgen:
   enabled: true
   image:
-    repository: 0xbinbash/token-tx
-    tag: 1.0.2
+    repository: ghcr.io/samclusker/token-tx
+    tag: 1.2.0
     digest: ""  # Optional
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   replicaCount: 1
   args:
     - --to-address=0x1DA9B48928EC505040Eb18a4E1e21aBfCc4Ccc46
@@ -423,6 +509,15 @@ txgen:
     periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
+  # NetworkPolicy configuration
+  networkPolicy:
+    enabled: true  # Set to true to enable NetworkPolicies
+    # Optional: Override Prometheus namespace (defaults to same namespace as release)
+    prometheusNamespace: ""
+    # Optional: Override Prometheus pod labels (defaults to standard prometheus labels)
+    prometheusLabels: {}
+      # app.kubernetes.io/name: prometheus
+      # app.kubernetes.io/component: prometheus
 
 ingress:
   annotations:
@@ -439,6 +534,12 @@ kube-prometheus-stack:
     service:
       type: LoadBalancer
       port: 80
+  # Optional: Override Prometheus namespace (defaults to same namespace as release)
+  prometheusNamespace: ""
+  # Optional: Override Prometheus pod labels (defaults to standard prometheus labels)
+  prometheusLabels: {}
+    # app.kubernetes.io/name: prometheus
+    # app.kubernetes.io/component: prometheus
 
 # Backup configuration using Gemini operator
 # Gemini will install them automatically if backup.enabled=true and gemini.installCRDs=true
@@ -448,7 +549,6 @@ backup:
   schedule:
     - every: day
       keep: 2
-  snapshotClass: ""
 
 # Gemini subchart configuration
 gemini:

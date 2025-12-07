@@ -20,6 +20,10 @@ spec:
       targetPort: json-rpc
       protocol: TCP
       name: json-rpc
+    - port: {{ .Values.besu.service.ports.wsRpc }}
+      targetPort: json-rpc-ws
+      protocol: TCP
+      name: json-rpc-ws
     - port: {{ .Values.besu.service.ports.engine }}
       targetPort: engine
       protocol: TCP

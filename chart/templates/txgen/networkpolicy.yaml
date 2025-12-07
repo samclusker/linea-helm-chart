@@ -1,0 +1,60 @@
+{{- if and .Values.txgen.networkPolicy.enabled .Values.txgen.enabled }}
+{{- $component := "txgen" }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-network-policy
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 6 }}
+  policyTypes:
+    - Egress
+    - Ingress
+  egress:
+    # Allow egress to besu RPC
+    - to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: {{ include "linea-dev.name" . }}
+            app.kubernetes.io/component: besu
+      ports:
+      - protocol: TCP
+        port: {{ .Values.besu.service.ports.rpc }}
+      - protocol: TCP
+        port: {{ .Values.besu.service.ports.wsRpc }}
+    # Allow DNS resolution (kube-dns or coredns)
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            name: kube-system
+      - podSelector:
+          matchLabels:
+            k8s-app: kube-dns
+      ports:
+      - protocol: UDP
+        port: 53
+      - protocol: TCP
+        port: 53
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            name: kube-system
+      - podSelector:
+          matchLabels:
+            k8s-app: coredns
+      ports:
+      - protocol: UDP
+        port: 53
+      - protocol: TCP
+        port: 53
+    # Allow egress to AWS APIs (for IRSA and Secrets Manager)
+    - to: []
+      ports:
+      - protocol: TCP
+        port: 443
+{{- end }}
+

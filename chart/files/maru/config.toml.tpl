@@ -8,13 +8,13 @@ private-key-path="/opt/consensys/maru/key"
 fee-recipient = "0x0000000000000000000000000000000000000000"
 
 [p2p]
-port = 9000
+port = {{ .Values.maru.service.ports.p2p }}
 ip-address = "0.0.0.0"
 static-peers = []
 reconnect-delay = "500 ms"
 
 [p2p.discovery]
-port = 9000
+port = {{ .Values.maru.service.ports.p2p }}
 refresh-interval = "2 seconds"
 
 [p2p.reputation]
@@ -29,12 +29,12 @@ eth-api-endpoint = { endpoint = "http://{{ include "linea-dev.component.name" (d
 follower-besu = { endpoint = "http://{{ include "linea-dev.component.name" (dict "component" "besu" "root" $) }}:{{ .Values.besu.service.ports.engine }}" }
 
 [observability]
-port = 9090
+port = {{ .Values.maru.service.ports.metrics }}
 jvm-metrics-enabled = true
 prometheus-metrics-enabled = true
 
 [api]
-port = 8080
+port = {{ .Values.maru.service.ports.api }}
 
 [syncing]
 peer-chain-height-polling-interval = "1 seconds"

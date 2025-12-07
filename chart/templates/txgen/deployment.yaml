@@ -54,7 +54,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           args:
-            - --rpc-url=http://{{ include "linea-dev.component.name" (dict "component" "besu" "root" .) }}:{{ .Values.besu.service.ports.rpc }}
+            - --rpc-url=ws://{{ include "linea-dev.component.name" (dict "component" "besu" "root" .) }}:{{ .Values.besu.service.ports.wsRpc }}
             {{- range .Values.txgen.args }}
             - {{ . }}
             {{- end }}
