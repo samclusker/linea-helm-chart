@@ -457,7 +457,7 @@ txgen:
     repository: ghcr.io/samclusker/token-tx
     tag: 1.2.0
     digest: ""  # Optional
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
   replicaCount: 1
   args:
     - --to-address=0x1DA9B48928EC505040Eb18a4E1e21aBfCc4Ccc46

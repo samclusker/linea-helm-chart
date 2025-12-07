@@ -266,7 +266,7 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | txgen.args[2] | string | `"--legacy-gas"` |  |
 | txgen.enabled | bool | `true` |  |
 | txgen.image.digest | string | `""` |  |
-| txgen.image.pullPolicy | string | `"Always"` |  |
+| txgen.image.pullPolicy | string | `"IfNotPresent"` |  |
 | txgen.image.repository | string | `"ghcr.io/samclusker/token-tx"` |  |
 | txgen.image.tag | string | `"1.2.0"` |  |
 | txgen.livenessProbe.failureThreshold | int | `3` |  |
