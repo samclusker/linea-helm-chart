@@ -64,14 +64,20 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           ports:
-            - name: metrics
-              containerPort: {{ .Values.sequencer.service.ports.metrics }}
+            - name: json-rpc
+              containerPort: {{ .Values.sequencer.service.ports.rpc }}
+              protocol: TCP
+            - name: json-rpc-ws
+              containerPort: {{ .Values.sequencer.service.ports.wsRpc }}
               protocol: TCP
             - name: engine
               containerPort: {{ .Values.sequencer.service.ports.engine }}
               protocol: TCP
-            - name: rpc
-              containerPort: {{ .Values.sequencer.service.ports.rpc }}
+            - name: p2p
+              containerPort: {{ .Values.sequencer.service.ports.p2p }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.sequencer.service.ports.metrics }}
               protocol: TCP
           {{- with .Values.sequencer.livenessProbe }}
           livenessProbe:
@@ -110,35 +116,35 @@ spec:
               subPath: log4j.xml
               readOnly: true
             {{- end }}
-            {{- if hasKey .Values.sequencer.files.overrides "genesis.json" }}
-            - name: overrides
+            {{- if hasKey .Values.common.files.overrides "genesis.json" }}
+            - name: common-overrides
               mountPath: /var/lib/besu/genesis.json
               subPath: genesis.json
               readOnly: true
             {{- else }}
-            - name: defaults
+            - name: common-defaults
               mountPath: /var/lib/besu/genesis.json
               subPath: genesis.json
               readOnly: true
             {{- end }}
-            {{- if hasKey .Values.sequencer.files.overrides "tracelimits.toml" }}
-            - name: overrides
+            {{- if hasKey .Values.common.files.overrides "tracelimits.toml" }}
+            - name: common-overrides
               mountPath: /var/lib/besu/traces-limits.toml
               subPath: tracelimits.toml
               readOnly: true
             {{- else }}
-            - name: defaults
+            - name: common-defaults
               mountPath: /var/lib/besu/traces-limits.toml
               subPath: tracelimits.toml
               readOnly: true
             {{- end }}
-            {{- if hasKey .Values.sequencer.files.overrides "denylist.txt" }}
-            - name: overrides
+            {{- if hasKey .Values.common.files.overrides "denylist.txt" }}
+            - name: common-overrides
               mountPath: /var/lib/besu/deny-list.txt
               subPath: denylist.txt
               readOnly: true
             {{- else }}
-            - name: defaults
+            - name: common-defaults
               mountPath: /var/lib/besu/deny-list.txt
               subPath: denylist.txt
               readOnly: true
@@ -174,6 +180,14 @@ spec:
         - name: overrides
           configMap:
             name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-overrides
+        {{- end }}
+        - name: common-defaults
+          configMap:
+            name: {{ include "linea-dev.name" . }}-defaults
+        {{- if .Values.common.files.overrides }}
+        - name: common-overrides
+          configMap:
+            name: {{ include "linea-dev.name" . }}-overrides
         {{- end }}
         {{- if .Values.sequencer.files.additionalFiles }}
         - name: additional-files

@@ -56,8 +56,8 @@ spec:
           env:
             {{- toYaml .Values.maru.additionalEnv | nindent 12 }}
           ports:
-            - name: http
-              containerPort: {{ .Values.maru.service.ports.http }}
+            - name: p2p
+              containerPort: {{ .Values.maru.service.ports.p2p }}
               protocol: TCP
             - name: metrics
               containerPort: {{ .Values.maru.service.ports.metrics }}

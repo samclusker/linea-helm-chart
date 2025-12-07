@@ -1,19 +1,19 @@
 data-path="/opt/besu/data"
 host-allowlist=["*"]
 sync-mode="FULL"
-p2p-port=30303
+p2p-port={{ .Values.besu.service.ports.p2p }}
 
 min-gas-price=0
 
 # engine
 engine-host-allowlist=["*"]
-engine-rpc-port=8550
+engine-rpc-port={{ .Values.besu.service.ports.engine }}
 engine-jwt-disabled=true
 
 # rpc
 rpc-http-enabled=true
 rpc-http-host="0.0.0.0"
-rpc-http-port=8545
+rpc-http-port={{ .Values.besu.service.ports.rpc }}
 rpc-http-cors-origins=["*"]
 rpc-http-api=["ADMIN","DEBUG","NET","ETH","ENGINE","WEB3","PLUGINS","LINEA"]
 rpc-http-max-active-connections=200
@@ -21,7 +21,7 @@ rpc-http-max-active-connections=200
 # ws
 rpc-ws-enabled=true
 rpc-ws-host="0.0.0.0"
-rpc-ws-port=8546
+rpc-ws-port={{ .Values.besu.service.ports.wsRpc }}
 rpc-ws-api=["ADMIN","TXPOOL","WEB3","ETH","NET","PERM","LINEA"]
 rpc-ws-max-active-connections=200
 
@@ -31,7 +31,7 @@ graphql-http-enabled=false
 # metrics
 metrics-enabled=true
 metrics-host="0.0.0.0"
-metrics-port=9545
+metrics-port={{ .Values.besu.service.ports.metrics }}
 
 # database
 data-storage-format="BONSAI"

@@ -1,0 +1,97 @@
+{{- if .Values.besu.networkPolicy.enabled }}
+{{- $component := "besu" }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "linea-dev.component.name" (dict "component" $component "root" .) }}-network-policy
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.component.labels" (dict "component" $component "root" .) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow RPC/WS from ingress controller
+    - from: []
+      ports:
+      - protocol: TCP
+        port: {{ .Values.besu.service.ports.rpc }}
+      - protocol: TCP
+        port: {{ .Values.besu.service.ports.wsRpc }}
+    # Allow metrics from Prometheus (if enabled)
+    {{- if .Values.serviceMonitor.enabled }}
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            {{- if .Values.global.prometheusNamespace }}
+            name: {{ .Values.global.prometheusNamespace }}
+            {{- else }}
+            name: {{ include "linea-dev.namespace" . }}
+            {{- end }}
+      - podSelector:
+          matchLabels:
+            {{- if .Values.global.prometheusLabels }}
+            {{- toYaml .Values.global.prometheusLabels | nindent 12 }}
+            {{- else }}
+            app.kubernetes.io/name: prometheus
+            app.kubernetes.io/component: prometheus
+            {{- end }}
+      ports:
+      - protocol: TCP
+        port: {{ .Values.besu.service.ports.metrics }}
+    {{- end }}
+    - from:
+      ports:
+      - protocol: TCP
+        port: {{ .Values.besu.service.ports.p2p }}
+  egress:
+    # Allow egress to AWS APIs (for IRSA and Secrets Manager)
+    - to: []
+      ports:
+      - protocol: TCP
+        port: 443
+    # Allow egress HTTP to ethstats
+    - to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/component: ethstats
+      ports:
+      - protocol: TCP
+        port: {{ .Values.ethstats.service.ports.http }}
+    # Allow egress p2p to sequencer
+    - to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/component: sequencer
+      ports:
+      - protocol: TCP
+        port: {{ .Values.sequencer.service.ports.p2p }}
+    # Allow egress DNS resolution (kube-dns or coredns)
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            name: kube-system
+      - podSelector:
+          matchLabels:
+            k8s-app: kube-dns
+      ports:
+      - protocol: UDP
+        port: 53
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            name: kube-system
+      - podSelector:
+          matchLabels:
+            k8s-app: coredns
+      ports:
+      - protocol: UDP
+        port: 53
+      - protocol: TCP
+        port: 53
+{{- end }}
+

@@ -1,6 +1,6 @@
 # linea-dev
 
-![Version: 1.1.0](https://img.shields.io/badge/Version-1.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Linea stack chart with sequencer, maru, besu and visualizer services
 
@@ -18,7 +18,6 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | backup.enabled | bool | `true` |  |
 | backup.schedule[0].every | string | `"day"` |  |
 | backup.schedule[0].keep | int | `2` |  |
-| backup.snapshotClass | string | `""` |  |
 | besu.additionalEnv | list | `[]` |  |
 | besu.affinity | object | `{}` |  |
 | besu.args[0] | string | `"--config-file=/var/lib/besu/config.toml"` |  |
@@ -42,6 +41,9 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | besu.livenessProbe.initialDelaySeconds | int | `60` |  |
 | besu.livenessProbe.periodSeconds | int | `10` |  |
 | besu.livenessProbe.timeoutSeconds | int | `5` |  |
+| besu.networkPolicy.enabled | bool | `true` |  |
+| besu.networkPolicy.prometheusLabels | object | `{}` |  |
+| besu.networkPolicy.prometheusNamespace | string | `""` |  |
 | besu.nodeSelector | object | `{}` |  |
 | besu.podAnnotations."backup.gemini.fairwinds.com/enabled" | string | `"true"` |  |
 | besu.podAnnotations."prometheus.io/path" | string | `"/metrics"` |  |
@@ -52,10 +54,10 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | besu.podSecurityContext.runAsGroup | int | `0` |  |
 | besu.podSecurityContext.runAsUser | int | `0` |  |
 | besu.replicaCount | int | `1` |  |
-| besu.resources.limits.cpu | string | `"4000m"` |  |
-| besu.resources.limits.memory | string | `"8Gi"` |  |
-| besu.resources.requests.cpu | string | `"1000m"` |  |
-| besu.resources.requests.memory | string | `"4Gi"` |  |
+| besu.resources.limits.cpu | int | `1` |  |
+| besu.resources.limits.memory | string | `"1Gi"` |  |
+| besu.resources.requests.cpu | string | `"300m"` |  |
+| besu.resources.requests.memory | string | `"1Gi"` |  |
 | besu.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | besu.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | besu.service.annotations."prometheus.io/path" | string | `"/metrics"` |  |
@@ -64,13 +66,16 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | besu.service.labels."app.kubernetes.io/component" | string | `"besu"` |  |
 | besu.service.ports.engine | int | `8550` |  |
 | besu.service.ports.metrics | int | `9545` |  |
+| besu.service.ports.p2p | int | `30303` |  |
 | besu.service.ports.rpc | int | `8545` |  |
+| besu.service.ports.wsRpc | int | `8546` |  |
 | besu.service.type | string | `"LoadBalancer"` |  |
 | besu.storage.accessModes[0] | string | `"ReadWriteOnce"` |  |
 | besu.storage.size | string | `"550Gi"` |  |
 | besu.storage.snapshotHandle | string | `""` |  |
 | besu.storage.storageClassName | string | `"gp2"` |  |
 | besu.tolerations | list | `[]` |  |
+| common.files.overrides | object | `{}` |  |
 | ethstats.additionalEnv | list | `[]` |  |
 | ethstats.affinity | object | `{}` |  |
 | ethstats.image.digest | string | `""` |  |
@@ -84,6 +89,7 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | ethstats.livenessProbe.initialDelaySeconds | int | `30` |  |
 | ethstats.livenessProbe.periodSeconds | int | `10` |  |
 | ethstats.livenessProbe.timeoutSeconds | int | `5` |  |
+| ethstats.networkPolicy.enabled | bool | `true` |  |
 | ethstats.nodeSelector | object | `{}` |  |
 | ethstats.podAnnotations | object | `{}` |  |
 | ethstats.podLabels."app.kubernetes.io/component" | string | `"ethstats"` |  |
@@ -131,6 +137,8 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | kube-prometheus-stack.grafana.enabled | bool | `true` |  |
 | kube-prometheus-stack.grafana.service.port | int | `80` |  |
 | kube-prometheus-stack.grafana.service.type | string | `"LoadBalancer"` |  |
+| kube-prometheus-stack.prometheusLabels | object | `{}` |  |
+| kube-prometheus-stack.prometheusNamespace | string | `""` |  |
 | maru.additionalEnv | list | `[]` |  |
 | maru.affinity | object | `{}` |  |
 | maru.command[0] | string | `"java"` |  |
@@ -152,6 +160,9 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | maru.livenessProbe.periodSeconds | int | `10` |  |
 | maru.livenessProbe.tcpSocket.port | int | `8080` |  |
 | maru.livenessProbe.timeoutSeconds | int | `5` |  |
+| maru.networkPolicy.enabled | bool | `true` |  |
+| maru.networkPolicy.prometheusLabels | object | `{}` |  |
+| maru.networkPolicy.prometheusNamespace | string | `""` |  |
 | maru.nodeSelector | object | `{}` |  |
 | maru.podAnnotations."backup.gemini.fairwinds.com/enabled" | string | `"true"` |  |
 | maru.podAnnotations."prometheus.io/path" | string | `"/metrics"` |  |
@@ -171,9 +182,9 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | maru.service.annotations."prometheus.io/port" | string | `"9545"` |  |
 | maru.service.annotations."prometheus.io/scrape" | string | `"true"` |  |
 | maru.service.labels."app.kubernetes.io/component" | string | `"maru"` |  |
-| maru.service.ports.http | int | `8080` |  |
+| maru.service.ports.api | int | `8080` |  |
 | maru.service.ports.metrics | int | `9545` |  |
-| maru.service.type | string | `"ClusterIP"` |  |
+| maru.service.ports.p2p | int | `9000` |  |
 | maru.storage.accessModes[0] | string | `"ReadWriteOnce"` |  |
 | maru.storage.size | string | `"500Gi"` |  |
 | maru.storage.snapshotHandle | string | `""` |  |
@@ -196,6 +207,9 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | sequencer.livenessProbe.initialDelaySeconds | int | `30` |  |
 | sequencer.livenessProbe.periodSeconds | int | `10` |  |
 | sequencer.livenessProbe.timeoutSeconds | int | `5` |  |
+| sequencer.networkPolicy.enabled | bool | `true` |  |
+| sequencer.networkPolicy.prometheusLabels | object | `{}` |  |
+| sequencer.networkPolicy.prometheusNamespace | string | `""` |  |
 | sequencer.nodeSelector | object | `{}` |  |
 | sequencer.podAnnotations."backup.gemini.fairwinds.com/enabled" | string | `"true"` |  |
 | sequencer.podAnnotations."prometheus.io/path" | string | `"/metrics"` |  |
@@ -228,7 +242,9 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | sequencer.service.labels."app.kubernetes.io/component" | string | `"sequencer"` |  |
 | sequencer.service.ports.engine | int | `8550` |  |
 | sequencer.service.ports.metrics | int | `9545` |  |
+| sequencer.service.ports.p2p | int | `30303` |  |
 | sequencer.service.ports.rpc | int | `8545` |  |
+| sequencer.service.ports.wsRpc | int | `8546` |  |
 | sequencer.service.type | string | `"ClusterIP"` |  |
 | sequencer.storage.accessModes[0] | string | `"ReadWriteOnce"` |  |
 | sequencer.storage.size | string | `"100Gi"` |  |
@@ -251,14 +267,17 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | txgen.enabled | bool | `true` |  |
 | txgen.image.digest | string | `""` |  |
 | txgen.image.pullPolicy | string | `"IfNotPresent"` |  |
-| txgen.image.repository | string | `"0xbinbash/token-tx"` |  |
-| txgen.image.tag | string | `"1.0.2"` |  |
+| txgen.image.repository | string | `"ghcr.io/samclusker/token-tx"` |  |
+| txgen.image.tag | string | `"1.2.0"` |  |
 | txgen.livenessProbe.failureThreshold | int | `3` |  |
 | txgen.livenessProbe.httpGet.path | string | `"/live"` |  |
 | txgen.livenessProbe.httpGet.port | int | `8080` |  |
 | txgen.livenessProbe.initialDelaySeconds | int | `60` |  |
 | txgen.livenessProbe.periodSeconds | int | `10` |  |
 | txgen.livenessProbe.timeoutSeconds | int | `5` |  |
+| txgen.networkPolicy.enabled | bool | `true` |  |
+| txgen.networkPolicy.prometheusLabels | object | `{}` |  |
+| txgen.networkPolicy.prometheusNamespace | string | `""` |  |
 | txgen.podAnnotations | object | `{}` |  |
 | txgen.podLabels."app.kubernetes.io/component" | string | `"txgen"` |  |
 | txgen.podSecurityContext.fsGroup | int | `10001` |  |

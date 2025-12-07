@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.name" . }}-defaults
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.labels" . | nindent 4 }}
+data:
+  genesis.json: |
+{{- .Files.Get "files/common/genesis.json" | nindent 4 }}
+  tracelimits.toml: |
+{{- .Files.Get "files/common/tracelimits.toml" | nindent 4 }}
+  denylist.txt: |
+{{- .Files.Get "files/common/denylist.txt" | nindent 4 }}
+{{- if .Values.common.files.overrides }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linea-dev.name" . }}-overrides
+  namespace: {{ include "linea-dev.namespace" . }}
+  labels:
+    {{- include "linea-dev.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.common.files.overrides }}
+  {{ $key }}: {{ toYaml $value | indent 2 }}
+  {{- end }}
+{{- end }}

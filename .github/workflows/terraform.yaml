@@ -1,0 +1,33 @@
+name: 'Terraform'
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #v3.1.2
+      with:
+        terraform_version: 1.13.0
+
+    - name: Terraform Init
+      run: terraform -chdir=terraform init
+
+    - name: Terraform Lint
+      id: lint
+      run: terraform fmt -check -recursive terraform/

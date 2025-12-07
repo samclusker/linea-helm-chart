@@ -18,18 +18,10 @@ spec:
   clusterIP: None
   type: ClusterIP
   ports:
-    - port: {{ .Values.sequencer.service.ports.metrics }}
-      targetPort: metrics
+    - port: {{ .Values.sequencer.service.ports.p2p }}
+      targetPort: p2p
       protocol: TCP
-      name: metrics
-    - port: {{ .Values.sequencer.service.ports.engine }}
-      targetPort: engine
-      protocol: TCP
-      name: engine
-    - port: {{ .Values.sequencer.service.ports.rpc }}
-      targetPort: rpc
-      protocol: TCP
-      name: rpc
+      name: p2p
   selector:
     {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 4 }}
 ---
@@ -52,17 +44,21 @@ metadata:
 spec:
   type: {{ .Values.sequencer.service.type }}
   ports:
-    - port: {{ .Values.sequencer.service.ports.metrics }}
-      targetPort: metrics
+    - port: {{ .Values.sequencer.service.ports.rpc }}
+      targetPort: json-rpc
       protocol: TCP
-      name: metrics
+      name: json-rpc
+    - port: {{ .Values.sequencer.service.ports.wsRpc }}
+      targetPort: json-rpc-ws
+      protocol: TCP
+      name: json-rpc-ws
     - port: {{ .Values.sequencer.service.ports.engine }}
       targetPort: engine
       protocol: TCP
       name: engine
-    - port: {{ .Values.sequencer.service.ports.rpc }}
-      targetPort: rpc
+    - port: {{ .Values.sequencer.service.ports.metrics }}
+      targetPort: metrics
       protocol: TCP
-      name: rpc
+      name: metrics
   selector:
     {{- include "linea-dev.component.selectorLabels" (dict "component" $component "root" .) | nindent 4 }}

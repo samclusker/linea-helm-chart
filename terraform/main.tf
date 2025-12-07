@@ -2,21 +2,20 @@
 module "linea_app_irsa" {
   count = var.use_aws_secrets || var.create_irsa_role ? 1 : 0
 
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.28"
+  source = "git::https://github.com/terraform-aws-modules/terraform-aws-iam.git//modules/iam-role-for-service-accounts?ref=7279fc4"
 
-  role_name_prefix = "linea-app-"
+  name = "linea-app"
 
   # Optional: Grant permissions to access Secrets Manager
   # Optional: Additional IAM policy ARNs to attach to the IRSA role
-  role_policy_arns = merge(
+  policies = merge(
     var.use_aws_secrets ? {
       "AWSSecretsManagerClientReadOnlyAccess" = "arn:aws:iam::aws:policy/AWSSecretsManagerClientReadOnlyAccess"
     } : {},
     { for idx, policy in var.irsa_additional_policies : "additional-policy-${idx}" => policy }
   )
 
-  role_description = "IAM role for Linea application service account"
+  description = "IAM role for Linea application service account"
 
   oidc_providers = {
     main = {
@@ -28,15 +27,21 @@ module "linea_app_irsa" {
   tags = var.tags
 }
 
+data "external" "chart_hash" {
+  program = ["bash", "-c", <<-EOT
+    find ../chart -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum | awk '{print $1}' | jq -R '{"hash":.}'
+  EOT
+  ]
+}
+
 resource "helm_release" "linea" {
   name             = var.release_name
   namespace        = var.namespace
-  repository       = null
   chart            = "${path.module}/../chart"
   create_namespace = true
   wait             = true
   atomic           = true
-  timeout          = 600
+  timeout          = 300
 
   values = [templatefile("${path.module}/values/values.yaml.tftpl", {
     global = {
@@ -50,8 +55,13 @@ resource "helm_release" "linea" {
     }
     service_account = {
       annotations = {
-        sa_role_arn = module.linea_app_irsa[0].iam_role_arn
+        sa_role_arn = module.linea_app_irsa[0].arn
       }
     }
   })]
+
+  set = [{
+    name  = "chart.hash"
+    value = data.external.chart_hash.result.hash
+  }]
 }

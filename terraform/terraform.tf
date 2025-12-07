@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/tls"
       version = "~> 4.1"
     }
+    external = {
+      source  = "hashicorp/external"
+      version = "~> 2.3"
+    }
   }
 }
 
@@ -37,3 +41,5 @@ provider "helm" {
 provider "time" {}
 
 provider "tls" {}
+
+provider "external" {}
