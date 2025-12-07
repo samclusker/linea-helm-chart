@@ -56,4 +56,4 @@ jobs:
     - name: Package and push helm chart
       run: |
         helm package ./chart --version ${{ steps.set-variable.outputs.VERSION }}
-        helm push ./linea-dev-${{ steps.set-variable.outputs.VERSION }}.tgz oci://ghcr.io/${{ github.actor }}/linea-dev
+        helm push ./linea-dev-${{ steps.set-variable.outputs.VERSION }}.tgz oci://ghcr.io/${{ github.actor }}
