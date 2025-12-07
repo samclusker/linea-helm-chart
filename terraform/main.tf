@@ -61,7 +61,7 @@ resource "helm_release" "linea" {
   })]
 
   set = [{
-    name = "chart.hash"
+    name  = "chart.hash"
     value = data.external.chart_hash.result.hash
   }]
 }
