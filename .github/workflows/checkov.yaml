@@ -37,8 +37,8 @@ jobs:
         soft_fail: true
         framework: terraform
         var_file: terraform/example.tfvars
-        output_format: cli,sarif
-        output_file_path: console,results.sarif
+        output_format: sarif
+        output_file_path: results.sarif
 
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v2.23.5

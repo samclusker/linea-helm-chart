@@ -38,6 +38,14 @@ jobs:
       run: |
         echo ${{ steps.set-variable.outputs.VERSION }}
 
+    - name: Update Helm dependencies
+      run: |
+        helm dependency update ./chart
+
+    - name: Lint Helm chart
+      run: |
+        helm lint ./chart
+
     - name: Login to GitHub Container Registry
       uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
       with:
@@ -48,4 +56,4 @@ jobs:
     - name: Package and push helm chart
       run: |
         helm package ./chart --version ${{ steps.set-variable.outputs.VERSION }}
-        helm push ./linea-chart-${{ steps.set-variable.outputs.VERSION }}.tgz oci://ghcr.io/${{ github.actor }}/linea-dev
+        helm push ./linea-dev-${{ steps.set-variable.outputs.VERSION }}.tgz oci://ghcr.io/${{ github.actor }}/linea-dev
