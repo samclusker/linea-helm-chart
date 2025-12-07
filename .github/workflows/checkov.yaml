@@ -12,7 +12,6 @@ permissions:
 jobs:
   scan:
     name: 'Checkov'
-    environment: production
 
     permissions:
       contents: read
