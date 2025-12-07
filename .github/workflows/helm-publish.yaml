@@ -11,11 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  package-helm-chart:
-    permissions:
-      contents: read
-      packages: write
-
+  lint:
     runs-on: ubuntu-latest
 
     defaults:
@@ -34,20 +30,38 @@ jobs:
       run: |
         helm lint ./chart
 
+  package-helm-chart:
+    needs: lint
+    permissions:
+      contents: read
+      packages: write
+
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
     - name: Set environment variables
-      if: startsWith(github.ref, 'refs/tags/')
       id: set-variable
       run: |
         echo "VERSION=$(yq -r .version ./chart/Chart.yaml)" >> "$GITHUB_OUTPUT"
 
     - name: Env variable output
-      if: startsWith(github.ref, 'refs/tags/')
       id: test-variable
       run: |
         echo ${{ steps.set-variable.outputs.VERSION }}
 
+    - name: Update Helm dependencies
+      run: |
+        helm dependency update ./chart
+
     - name: Login to GitHub Container Registry
-      if: startsWith(github.ref, 'refs/tags/')
       uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
       with:
         registry: ghcr.io
@@ -55,7 +69,6 @@ jobs:
         password: ${{ github.token }}
 
     - name: Package and push helm chart
-      if: startsWith(github.ref, 'refs/tags/')
       run: |
         helm package ./chart --version ${{ steps.set-variable.outputs.VERSION }}
         helm push ./linea-dev-${{ steps.set-variable.outputs.VERSION }}.tgz oci://ghcr.io/${{ github.actor }}/chart
