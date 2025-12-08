@@ -157,7 +157,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: {{ .Values.maru.storage.storageClassName }}
+        storageClassName: {{ include "linea-dev.name" . }}-storage-class
         {{- if not (empty .Values.maru.storage.snapshotHandle) }}
         dataSource:
           kind: VolumeSnapshot

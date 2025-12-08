@@ -218,7 +218,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: {{ .Values.besu.storage.storageClassName }}
+        storageClassName: {{ include "linea-dev.name" . }}-storage-class
         {{- if not (empty .Values.besu.storage.snapshotHandle) }}
         dataSource:
           kind: VolumeSnapshot

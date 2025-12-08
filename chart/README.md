@@ -1,6 +1,6 @@
 # linea-dev
 
-![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.2.1](https://img.shields.io/badge/Version-1.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Linea stack chart with sequencer, maru, besu and visualizer services
 
@@ -71,9 +71,8 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | besu.service.ports.wsRpc | int | `8546` |  |
 | besu.service.type | string | `"LoadBalancer"` |  |
 | besu.storage.accessModes[0] | string | `"ReadWriteOnce"` |  |
-| besu.storage.size | string | `"550Gi"` |  |
+| besu.storage.size | string | `"100Gi"` |  |
 | besu.storage.snapshotHandle | string | `""` |  |
-| besu.storage.storageClassName | string | `"gp2"` |  |
 | besu.tolerations | list | `[]` |  |
 | common.files.overrides | object | `{}` |  |
 | ethstats.additionalEnv | list | `[]` |  |
@@ -188,7 +187,6 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | maru.storage.accessModes[0] | string | `"ReadWriteOnce"` |  |
 | maru.storage.size | string | `"500Gi"` |  |
 | maru.storage.snapshotHandle | string | `""` |  |
-| maru.storage.storageClassName | string | `"gp2"` |  |
 | maru.tolerations | list | `[]` |  |
 | sequencer.additionalEnv | list | `[]` |  |
 | sequencer.affinity | object | `{}` |  |
@@ -249,7 +247,6 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | sequencer.storage.accessModes[0] | string | `"ReadWriteOnce"` |  |
 | sequencer.storage.size | string | `"100Gi"` |  |
 | sequencer.storage.snapshotHandle | string | `""` |  |
-| sequencer.storage.storageClassName | string | `"gp2"` |  |
 | sequencer.tolerations | list | `[]` |  |
 | serviceAccount.annotations | string | `nil` |  |
 | serviceAccount.automount | bool | `true` |  |

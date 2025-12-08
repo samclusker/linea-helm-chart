@@ -226,9 +226,7 @@ spec:
           {{- range .Values.sequencer.storage.accessModes }}
           - {{ . | quote }}
           {{- end }}
-        {{- if .Values.sequencer.storage.storageClassName }}
-        storageClassName: {{ .Values.sequencer.storage.storageClassName }}
-        {{- end }}
+        storageClassName: {{ include "linea-dev.name" . }}-storage-class
         {{- if not (empty .Values.sequencer.storage.snapshotHandle) }}
         dataSource:
           kind: VolumeSnapshot

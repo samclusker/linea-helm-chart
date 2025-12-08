@@ -53,7 +53,6 @@ sequencer:
       memory: 4Gi
   storage:
     size: 100Gi
-    storageClassName: "gp2"
     accessModes:
       - ReadWriteOnce
     snapshotHandle: ""  # Optional: snapshot handle for restore
@@ -168,7 +167,6 @@ maru:
       memory: 2Gi
   storage:
     size: 500Gi
-    storageClassName: "gp2"
     accessModes:
       - ReadWriteOnce
     snapshotHandle: ""
@@ -277,8 +275,7 @@ besu:
       cpu: 1
       memory: 1Gi
   storage:
-    size: 550Gi
-    storageClassName: "gp2"
+    size: 100Gi
     accessModes:
       - ReadWriteOnce
     snapshotHandle: ""  # Optional
