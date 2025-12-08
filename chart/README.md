@@ -1,6 +1,6 @@
 # linea-dev
 
-![Version: 1.2.1](https://img.shields.io/badge/Version-1.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.3.0](https://img.shields.io/badge/Version-1.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Linea stack chart with sequencer, maru, besu and visualizer services
 
@@ -54,10 +54,10 @@ Linea stack chart with sequencer, maru, besu and visualizer services
 | besu.podSecurityContext.runAsGroup | int | `0` |  |
 | besu.podSecurityContext.runAsUser | int | `0` |  |
 | besu.replicaCount | int | `1` |  |
-| besu.resources.limits.cpu | int | `1` |  |
-| besu.resources.limits.memory | string | `"1Gi"` |  |
-| besu.resources.requests.cpu | string | `"300m"` |  |
-| besu.resources.requests.memory | string | `"1Gi"` |  |
+| besu.resources.limits.cpu | int | `2` |  |
+| besu.resources.limits.memory | string | `"3Gi"` |  |
+| besu.resources.requests.cpu | int | `1` |  |
+| besu.resources.requests.memory | string | `"3Gi"` |  |
 | besu.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | besu.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | besu.service.annotations."prometheus.io/path" | string | `"/metrics"` |  |
